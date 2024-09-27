@@ -62,5 +62,6 @@ protected:
     double time = 0;
     double gravityAccel;
     double shotHeight, shotAngle, shotSpeed;
+    double elasticity;
 };
 #endif // SCENEPROJECTILES_H

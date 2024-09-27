@@ -121,6 +121,8 @@ void SceneProjectiles::reset() {
     shotAngle    = Math::toRad(widget->getAngle());
     shotSpeed    = widget->getSpeed();
     gravityAccel = widget->getGravity();
+    elasticity   = widget->getElasticity();
+
 
     // integrators
     if (integrator1) delete integrator1;
@@ -194,10 +196,10 @@ void SceneProjectiles::update(double dt) {
         if (p->pos.y() < 0) {
 
             Vecd current_position = systemNumerical1.getPositions();
-            Vec3 next_position = {current_position[0],-current_position[1], current_position[2]};
+            Vec3 next_position = {current_position[0],-current_position[1]*elasticity, current_position[2]};
 
             Vecd current_velocity = systemNumerical1.getVelocities();
-            Vec3 next_velocity = {current_velocity[0],-current_velocity[1], current_velocity[2]};
+            Vec3 next_velocity = {current_velocity[0],-current_velocity[1]*elasticity, current_velocity[2]};
 
             systemNumerical1.setPositions(next_position);
             systemNumerical1.setVelocities(next_velocity);
@@ -220,10 +222,10 @@ void SceneProjectiles::update(double dt) {
         if (p->pos.y() < 0) {
 
             Vecd current_position = systemNumerical2.getPositions();
-            Vec3 next_position = {current_position[0],-current_position[1], current_position[2]};
+            Vec3 next_position = {current_position[0],-current_position[1]*elasticity, current_position[2]};
 
             Vecd current_velocity = systemNumerical2.getVelocities();
-            Vec3 next_velocity = {current_velocity[0],-current_velocity[1], current_velocity[2]};
+            Vec3 next_velocity = {current_velocity[0],-current_velocity[1]*elasticity, current_velocity[2]};
 
             systemNumerical2.setPositions(next_position);
             systemNumerical2.setVelocities(next_velocity);

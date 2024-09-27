@@ -29,6 +29,10 @@ double WidgetProjectiles::getSpeed() const {
     return ui->speed->value();
 }
 
+double WidgetProjectiles::getElasticity() const {
+    return ui->elasticityCoefficient->value();
+}
+
 int WidgetProjectiles::getSolver1() const {
     return ui->solver1->currentIndex();
 }
@@ -61,4 +65,5 @@ void WidgetProjectiles::setSolver1(int idx) {
 void WidgetProjectiles::setSolver2(int idx) {
     ui->solver2->setCurrentIndex(idx);
 }
+
 

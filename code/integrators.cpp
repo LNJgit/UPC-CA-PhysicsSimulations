@@ -10,6 +10,12 @@ void IntegratorEuler::step(ParticleSystem &system, double dt) {
 
 
 void IntegratorSymplecticEuler::step(ParticleSystem &system, double dt) {
+    Vecd current_velocity = system.getVelocities();
+    Vecd next_velocity = current_velocity + system.getAccelerations()*dt;
+    Vecd next_position = system.getPositions() + dt*next_velocity;
+    system.setPositions(next_position);
+    system.setVelocities(next_velocity);
+
 }
 
 void IntegratorRK2::step(ParticleSystem &system, double dt) {

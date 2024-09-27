@@ -28,6 +28,12 @@ public:
     virtual void step(ParticleSystem& system, double dt);
 };
 
+class IntegratorRK2 : public Integrator {
+public:
+    virtual void step(ParticleSystem& system, double dt);
+};
+
+
 
 class IntegratorVerlet : public Integrator {
 public:

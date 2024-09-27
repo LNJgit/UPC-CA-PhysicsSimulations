@@ -192,11 +192,16 @@ void SceneProjectiles::update(double dt) {
         // collision test
         Particle* p = systemNumerical1.getParticle(0);
         if (p->pos.y() < 0) {
-            // resolve
-            // TODO
 
-            // stop sim for this system
-            system1active = false;
+            Vecd current_position = systemNumerical1.getPositions();
+            Vec3 next_position = {current_position[0],-current_position[1], current_position[2]};
+
+            Vecd current_velocity = systemNumerical1.getVelocities();
+            Vec3 next_velocity = {current_velocity[0],-current_velocity[1], current_velocity[2]};
+
+            systemNumerical1.setPositions(next_position);
+            systemNumerical1.setVelocities(next_velocity);
+
         }
 
         // record trajectory
@@ -213,11 +218,15 @@ void SceneProjectiles::update(double dt) {
         // collision test
         Particle* p = systemNumerical2.getParticle(0);
         if (p->pos.y() < 0) {
-            // resolve
-            // TODO
 
-            // stop sim for this system
-            system2active = false;
+            Vecd current_position = systemNumerical2.getPositions();
+            Vec3 next_position = {current_position[0],-current_position[1], current_position[2]};
+
+            Vecd current_velocity = systemNumerical2.getVelocities();
+            Vec3 next_velocity = {current_velocity[0],-current_velocity[1], current_velocity[2]};
+
+            systemNumerical2.setPositions(next_position);
+            systemNumerical2.setVelocities(next_velocity);
         }
 
         // record trajectory

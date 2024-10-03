@@ -33,6 +33,10 @@ double WidgetProjectiles::getElasticity() const {
     return ui->elasticityCoefficient->value();
 }
 
+double WidgetProjectiles::getDragCoeifficient() const {
+    return ui->dragCoefficient->value();
+}
+
 int WidgetProjectiles::getSolver1() const {
     return ui->solver1->currentIndex();
 }

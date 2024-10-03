@@ -1,4 +1,6 @@
 #include "forces.h"
+#include <glm/glm.hpp>
+
 
 void ForceConstAcceleration::apply() {
     for (Particle* p : particles) {
@@ -8,7 +10,8 @@ void ForceConstAcceleration::apply() {
 
 void ForceDrag::apply() {
     for (Particle* p : particles) {
-        // TODO
+        double velMagnitude = sqrt((p->vel[0]*p->vel[0]+p->vel[1]*p->vel[1]+p->vel[2]*p->vel[2]));
+        p->force += (p->vel * -1.0f * this->klinear) - (velMagnitude*p->vel*kquadratic);
     }
 }
 

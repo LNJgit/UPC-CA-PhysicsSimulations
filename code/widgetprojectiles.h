@@ -20,6 +20,7 @@ public:
     double getAngle() const;
     double getSpeed() const;
     double getElasticity() const;
+    double getDragCoeifficient() const;
     int getSolver1() const;
     int getSolver2() const;
     bool renderSameZ() const;

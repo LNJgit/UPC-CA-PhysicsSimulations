@@ -9,7 +9,7 @@ SceneProjectiles::SceneProjectiles() {
     widget = new WidgetProjectiles();
 
     const std::vector<std::string> solvers = {
-        "Euler", "Symplectic Euler", "Midpoint", "RK2"
+        "Euler", "Symplectic Euler", "Midpoint", "RK2", "Verlet"
     };
     widget->setSolverTypes(solvers);
     widget->setSolver1(0); // Euler
@@ -121,6 +121,7 @@ Integrator* createIntegrator(int type) {
         case 1: return new IntegratorSymplecticEuler();
         case 2: return new IntegratorMidpoint();
         case 3: return new IntegratorRK2();
+        case 4: return new IntegratorVerlet();
         default: return nullptr;
     }
 }
@@ -182,6 +183,7 @@ void SceneProjectiles::reset() {
 void SceneProjectiles::update(double dt) {
 
     // total ellapsed time (needed for analytic solution)
+
     time += dt;
 
     // ANALYTIC: projectile motion equations until we reach the ground

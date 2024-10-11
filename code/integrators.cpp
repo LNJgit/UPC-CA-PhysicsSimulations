@@ -13,6 +13,7 @@ void IntegratorSymplecticEuler::step(ParticleSystem &system, double dt) {
     Vecd current_velocity = system.getVelocities();
     Vecd next_velocity = current_velocity + system.getAccelerations()*dt;
     Vecd next_position = system.getPositions() + dt*next_velocity;
+    system.updateForces();
     system.setPositions(next_position);
     system.setVelocities(next_velocity);
 
@@ -41,5 +42,12 @@ void IntegratorMidpoint::step(ParticleSystem &system, double dt) {
 }
 
 void IntegratorVerlet::step(ParticleSystem &system, double dt) {
-    // TODO
+    Vecd current_position = system.getPositions();
+    Vecd current_velocity = system.getVelocities();
+
+    Vecd next_position = current_position + (dt*current_velocity) + pow(dt,2.0)*system.getAccelerations();
+    system.updateForces();
+    system.setPositions(next_position);
+    system.setVelocities((next_position-current_position)/dt);
+
 }

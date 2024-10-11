@@ -11,7 +11,7 @@ void ForceConstAcceleration::apply() {
 void ForceDrag::apply() {
     for (Particle* p : particles) {
         double velMagnitude = sqrt((p->vel[0]*p->vel[0]+p->vel[1]*p->vel[1]+p->vel[2]*p->vel[2]));
-        p->force += (p->vel * -1.0f * this->klinear) - (velMagnitude*p->vel*kquadratic);
+        p->force += (p->vel * -1.0f * this->klinear) - (0*velMagnitude*p->vel*kquadratic);
     }
 }
 

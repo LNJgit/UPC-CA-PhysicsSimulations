@@ -1,6 +1,7 @@
 #include "sceneprojectiles.h"
 #include "glutils.h"
 #include "model.h"
+#include "colliders.h"
 #include <QMatrix4x4>
 #include <iostream>
 
@@ -208,19 +209,15 @@ void SceneProjectiles::update(double dt) {
         // integration step
         integrator1->step(systemNumerical1, dt);
 
-        // collision test
+        //COLLISION DETECTION USING COLLIDERS
         Particle* p = systemNumerical1.getParticle(0);
-        if (p->pos.y() < 0) {
-
-            Vecd current_position = systemNumerical1.getPositions();
-            Vec3 next_position = {current_position[0],-current_position[1]*elasticity, current_position[2]};
-
-            Vecd current_velocity = systemNumerical1.getVelocities();
-            Vec3 next_velocity = {current_velocity[0],-current_velocity[1]*elasticity, current_velocity[2]};
-
-            systemNumerical1.setPositions(next_position);
-            systemNumerical1.setVelocities(next_velocity);
-
+        ColliderPlane floor;
+        Vec3 normal_floor(0.0,1.0,0.0);
+        floor.setPlane(normal_floor,0.0);
+        Collision col;
+        if (floor.testCollision(p,col))
+        {
+            floor.resolveCollision(p,col,1.0,0.0);
         }
 
         // record trajectory
@@ -234,19 +231,17 @@ void SceneProjectiles::update(double dt) {
         // integration step
         integrator2->step(systemNumerical2, dt);
 
-        // collision test
+        //COLLISION DETECTOR USING COLLIDERS
         Particle* p = systemNumerical2.getParticle(0);
-        if (p->pos.y() < 0) {
-
-            Vecd current_position = systemNumerical2.getPositions();
-            Vec3 next_position = {current_position[0],-current_position[1]*elasticity, current_position[2]};
-
-            Vecd current_velocity = systemNumerical2.getVelocities();
-            Vec3 next_velocity = {current_velocity[0],-current_velocity[1]*elasticity, current_velocity[2]};
-
-            systemNumerical2.setPositions(next_position);
-            systemNumerical2.setVelocities(next_velocity);
+        ColliderPlane floor;
+        Vec3 normal_floor(0.0,1.0,0.0);
+        floor.setPlane(normal_floor,0.0);
+        Collision col;
+        if (floor.testCollision(p,col))
+        {
+           floor.resolveCollision(p,col,1.0,0.0);
         }
+
 
         // record trajectory
         trajectoryNumerical2.push_back(p->pos);

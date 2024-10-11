@@ -136,7 +136,8 @@ void SceneProjectiles::reset() {
     shotSpeed    = widget->getSpeed();
     gravityAccel = widget->getGravity();
     elasticity   = widget->getElasticity();
-    dragCoefficient = widget->getDragCoeifficient();
+    dragCoefficient = widget->getDragCoefficient();
+    frictionCoefficient = widget ->getFrictionCoefficient();
 
 
     // integrators
@@ -217,7 +218,7 @@ void SceneProjectiles::update(double dt) {
         Collision col;
         if (floor.testCollision(p,col))
         {
-            floor.resolveCollision(p,col,1.0,0.0);
+            floor.resolveCollision(p,col,elasticity,frictionCoefficient);
         }
 
         // record trajectory
@@ -239,7 +240,7 @@ void SceneProjectiles::update(double dt) {
         Collision col;
         if (floor.testCollision(p,col))
         {
-           floor.resolveCollision(p,col,1.0,0.0);
+           floor.resolveCollision(p,col,elasticity,frictionCoefficient);
         }
 
 

@@ -66,5 +66,6 @@ protected:
     double shotHeight, shotAngle, shotSpeed;
     double elasticity;
     double dragCoefficient;
+    double frictionCoefficient;
 };
 #endif // SCENEPROJECTILES_H

@@ -55,6 +55,7 @@ protected:
     ColliderPlane colliderFloor;
     ColliderSphere colliderSphere;
     ColliderAABB   colliderBox;
+    ColliderParticles colliderParticles;
 
     double kBounce, kFriction;
     double emitRate;

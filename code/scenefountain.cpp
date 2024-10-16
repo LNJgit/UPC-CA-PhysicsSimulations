@@ -2,6 +2,7 @@
 #include "glutils.h"
 #include "model.h"
 #include <QOpenGLFunctions_3_3_Core>
+#include <iostream>
 
 
 SceneFountain::SceneFountain() {
@@ -59,6 +60,7 @@ void SceneFountain::initialize() {
     colliderSphere.setCenter(Vec3(0,0,0));
     colliderSphere.setRadius(10);
     colliderBox.setFromBounds(Vec3(30,0,20), Vec3(50,10,60));
+    colliderParticles.setCellSize(2);
 }
 
 
@@ -86,7 +88,7 @@ void SceneFountain::updateSimParams()
     // get other relevant UI values and update simulation params
     kBounce = 0.5;
     kFriction = 0.1;
-    maxParticleLife = 50.0;
+    maxParticleLife = 10.0;
     emitRate = 100;
 }
 
@@ -210,6 +212,13 @@ void SceneFountain::update(double dt) {
     integrator.step(system, dt);
     system.setPreviousPositions(ppos);
 
+    colliderParticles.particleMap.clear();
+    for (Particle *p : system.getParticles())
+    {
+        colliderParticles.addParticle(p);
+    }
+
+
     // collisions
     Collision colInfo;
     for (Particle* p : system.getParticles()) {
@@ -223,6 +232,10 @@ void SceneFountain::update(double dt) {
         if (colliderBox.testCollision(p,colInfo))
         {
             colliderBox.resolveCollision(p,colInfo,kBounce,kFriction);
+        }
+        if(colliderParticles.testCollision(p,colInfo))
+        {
+            colliderParticles.resolveCollisionParticles(colInfo,kBounce,kFriction);
         }
     }
 

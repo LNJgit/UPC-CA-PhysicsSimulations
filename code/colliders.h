@@ -8,6 +8,8 @@
 struct Collision {
     Vec3 position;
     Vec3 normal;
+    const Particle* p1;
+    const Particle* p2;
 };
 
 
@@ -63,6 +65,26 @@ public:
 protected:
     Vec3 center;
     double radius;
+};
+
+
+class ColliderParticles : public Collider {
+public:
+    std::unordered_map<int, std::vector<Particle*>> particleMap;
+    ColliderParticles() = default;  // Default constructor
+    virtual ~ColliderParticles() = default;
+
+    int getHashValue(const Particle* p) const;
+    bool isInside(const Particle* p) const;
+    void addParticle(Particle *p);
+    bool testCollision(const Particle* p, Collision& colInfo) const;
+    bool isWithinRadius(const Vec3& vec1, const Vec3& vec2, double radius) const; // Mark as const
+    void setCellSize(double cellSize);
+
+    void resolveCollisionParticles(const Collision& col, double kBounce, double kFriction);
+
+protected:// Assuming this is declared
+    double cellSize;
 };
 
 

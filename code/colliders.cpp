@@ -192,12 +192,145 @@ bool ColliderAABB::testCollision(const Particle* p, Collision& colInfo) const
     colInfo.normal = normal;
     colInfo.position = collision_point;
 
-    // Log the collision point and face
-    std::cout << "Collision point: "
-              << collision_point[0] << " "
-              << collision_point[1] << " "
-              << collision_point[2] << std::endl;
-    std::cout << "Collided with: " << collidedFace << std::endl;
 
     return true;
 }
+
+
+int ColliderParticles::getHashValue(const Particle* p) const
+{
+    Vec3 particle_position = p->pos;
+    int x = static_cast<int>(std::floor(particle_position[0] / cellSize));
+    int y = static_cast<int>(std::floor(particle_position[1] / cellSize));
+    int z = static_cast<int>(std::floor(particle_position[2] / cellSize));
+
+    int hashKey = x * 73856093 ^ y * 19349663 ^ z * 83492791;
+    return hashKey;
+}
+
+bool ColliderParticles::isInside(const Particle *p) const {
+    if (p == nullptr) {
+        return false; // Handle null pointer
+    }
+
+    int hashValue = getHashValue(p);
+
+    // Check if the hashValue exists in the particleMap
+    auto it = particleMap.find(hashValue);
+    if (it != particleMap.end()) {
+        const auto& particles = it->second; // Access the vector using iterator
+
+        // Iterate through the particles to check for collisions or conditions
+        for (const auto& particle : particles) {
+            // Check if the current particle is the same as particle p
+            if (particle == p) {
+                continue; // Skip self-collision check
+            }
+
+            const Vec3& pos1 = p->pos; // Use const reference to avoid copies
+            const Vec3& pos2 = particle->pos; // Use const reference
+
+
+            double radius = p->radius; // Assuming p has a radius member
+
+            if (isWithinRadius(pos1, pos2, radius)) {
+                return true; // Found a collision or condition
+            }
+        }
+    }
+
+    return false; // Return false if no collision found
+}
+
+
+bool ColliderParticles::testCollision(const Particle* p, Collision& colInfo) const {
+    if (p == nullptr) {
+        return false; // Handle null pointer
+    }
+
+    int hashValue = getHashValue(p);
+
+    // Check if the hashValue exists in the particleMap
+    auto it = particleMap.find(hashValue);
+    if (it != particleMap.end()) {
+        auto& particles = it->second; // Access the vector using iterator
+
+        // Iterate through the particles to check for collisions or conditions
+        for (auto& particle : particles) {
+            // Check if the current particle is the same as particle p
+            if (particle == p) {
+                continue; // Skip self-collision check
+            }
+
+            const Vec3& pos1 = p->pos; // Use const reference to avoid copies
+            const Vec3& pos2 = particle->pos; // Use const reference
+
+
+            double radius = p->radius; // Assuming p has a radius member
+
+            if (isWithinRadius(pos1, pos2, radius)) {
+                colInfo.position = (pos1 + pos2) * 0.5; // Midpoint as collision position
+                colInfo.normal = (pos1 - pos2).normalized(); // Normal vector
+                colInfo.p1 = p;
+                colInfo.p2 = particle;
+                return true; // Found a collision or condition
+            }
+        }
+    }
+
+    return false; // Return false if no collision found
+}
+
+
+void ColliderParticles::addParticle(Particle *p) {
+    int hashValue = getHashValue(p);
+    particleMap[hashValue].push_back(p); // This assumes particleMap is properly initialized
+}
+
+bool ColliderParticles::isWithinRadius(const Vec3& vec1, const Vec3& vec2, double radius) const { // Add const here
+    Vec3 difference = vec1 - vec2;
+    return difference.norm() < 2*radius; // Check for collision
+}
+
+void ColliderParticles::resolveCollisionParticles(const Collision& col, double kBounce, double kFriction)
+{
+    Particle* p1 = const_cast<Particle*>(col.p1);
+    Particle* p2 = const_cast<Particle*>(col.p2);
+    // Relative velocity between particles
+    Vec3 relative_velocity = p1->vel - p2->vel;
+
+    // Normal vector from p1 to p2
+    Vec3 collision_normal = (p1->pos - p2->pos).normalized();
+
+    // Velocity component along the normal
+    double velocity_along_normal = relative_velocity.dot(collision_normal);
+
+    // If velocity is separating, no collision to resolve
+    if (velocity_along_normal > 0)
+    {
+        return;
+    }
+
+    // Restitution (elasticity factor)
+    double restitution = kBounce;
+
+    // Tangential (frictional) component of velocity
+    Vec3 tangent_velocity = relative_velocity - (velocity_along_normal * collision_normal);
+
+    // Apply friction to tangential velocity (reducing its magnitude)
+    Vec3 friction_impulse = -(1 - kFriction) * tangent_velocity;
+
+    // Calculate normal impulse (same as before)
+    double normal_impulse_magnitude = -(1 + restitution) * velocity_along_normal;
+    Vec3 normal_impulse = normal_impulse_magnitude * collision_normal;
+
+    // Update velocities of both particles
+    p1->vel += (normal_impulse + friction_impulse);
+    p2->vel -= (normal_impulse + friction_impulse);
+}
+
+void ColliderParticles::setCellSize(double cellSize)
+{
+    this->cellSize = 2;
+}
+

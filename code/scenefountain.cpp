@@ -86,7 +86,7 @@ void SceneFountain::updateSimParams()
     // get other relevant UI values and update simulation params
     kBounce = 0.5;
     kFriction = 0.1;
-    maxParticleLife = 10.0;
+    maxParticleLife = 50.0;
     emitRate = 100;
 }
 
@@ -215,6 +215,14 @@ void SceneFountain::update(double dt) {
     for (Particle* p : system.getParticles()) {
         if (colliderFloor.testCollision(p, colInfo)) {
             colliderFloor.resolveCollision(p, colInfo, kBounce, kFriction);
+        }
+        if (colliderSphere.testCollision(p,colInfo))
+        {
+            colliderSphere.resolveCollision(p,colInfo,kBounce,kFriction);
+        }
+        if (colliderBox.testCollision(p,colInfo))
+        {
+            colliderBox.resolveCollision(p,colInfo,kBounce,kFriction);
         }
     }
 

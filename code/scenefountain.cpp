@@ -60,7 +60,7 @@ void SceneFountain::initialize() {
     colliderSphere.setCenter(Vec3(0,0,0));
     colliderSphere.setRadius(10);
     colliderBox.setFromBounds(Vec3(30,0,20), Vec3(50,10,60));
-    colliderParticles.setCellSize(2);
+    colliderParticles.setCellSize(1);
 }
 
 
@@ -89,7 +89,7 @@ void SceneFountain::updateSimParams()
     kBounce = 0.5;
     kFriction = 0.1;
     maxParticleLife = 10.0;
-    emitRate = 100;
+    emitRate = 200;
 }
 
 

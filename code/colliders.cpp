@@ -8,26 +8,18 @@
  */
 void Collider::resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction) const
 {
-    // Get the current particle's velocity
+    //We need to reflect the particle velocity.
     Vec3 current_particle_velocity = p->vel;
+    double dot_product_normal = current_particle_velocity.dot(col.normal);  //This should be with next velocity not current (FIX)
+    Vec3 normal_velocity = dot_product_normal*col.normal;
+    Vec3 tangent_velocity = current_particle_velocity-normal_velocity;
 
-    // Calculate the dot product with the collision normal
-    double dot_product_normal = current_particle_velocity.dot(col.normal);  // Use current velocity
-    Vec3 normal_velocity = dot_product_normal * col.normal;
-    Vec3 tangent_velocity = current_particle_velocity - normal_velocity;
+    Vec3 new_normal_velocity = -kElastic*normal_velocity;
+    Vec3 new_tangent_velocity = (1-kFriction) * tangent_velocity;
 
-    // Reflect the normal component of the velocity
-    Vec3 new_normal_velocity = -kElastic * normal_velocity;
+    p->vel = (new_normal_velocity+new_tangent_velocity);
+    p->pos = col.position;
 
-    // Adjust the tangential component with friction
-    Vec3 new_tangent_velocity = (1 - kFriction) * tangent_velocity;
-
-    // Update the particle's velocity
-    p->vel = new_normal_velocity + new_tangent_velocity;
-
-    // Adjust the particle's position to prevent clipping
-    double particle_radius = p->radius;  // Get the particle's radius
-    p->pos = col.position + col.normal * particle_radius;  // Move the particle outside the colliding object
 }
 
 
@@ -134,68 +126,73 @@ bool ColliderAABB::isInside(const Particle* p) const
     Vec3 max_bound = this->bmax;
     Vec3 min_bound = this->bmin;
 
-    return (min_bound[0] <= current_particle_position[0] && current_particle_position[0] <= max_bound[0]) &&
-           (min_bound[1] <= current_particle_position[1] && current_particle_position[1] <= max_bound[1]) &&
-           (min_bound[2] <= current_particle_position[2] && current_particle_position[2] <= max_bound[2]);
+    // Check if the particle's position is within bounds on all axes
+    return (min_bound[0] < current_particle_position[0] && current_particle_position[0] < max_bound[0]) &&
+           (min_bound[1] < current_particle_position[1] && current_particle_position[1] < max_bound[1]) &&
+           (min_bound[2] < current_particle_position[2] && current_particle_position[2] < max_bound[2]);
 }
 
 
 
 bool ColliderAABB::testCollision(const Particle* p, Collision& colInfo) const
 {
-
     // Get the particle's position and velocity
     Vec3 current_position = p->pos;
     Vec3 velocity = p->vel;
     Vec3 min_bound = this->getMin();
     Vec3 max_bound = this->getMax();
+
     // Initialize the collision normal and collision point
     Vec3 normal(0, 0, 0);
     Vec3 collision_point;
+
     // If the particle is NOT inside the AABB, return false early
     if (!this->isInside(p)) {
         return false;
     }
+
     // The particle is inside the AABB, now we check for the closest boundary
-    double min_dist = 1.0;
+    double min_dist = std::numeric_limits<double>::max();
     std::string collidedFace;
+
     // Check each axis for the closest face and compute the collision point
     for (int i = 0; i < 3; ++i) {
         double distToMin = std::abs(current_position[i] - min_bound[i]);
         double distToMax = std::abs(current_position[i] - max_bound[i]);
+
         // Determine if the particle is closer to the min or max boundary
         if (distToMin < min_dist) {
             min_dist = distToMin;
             collision_point = current_position;
             collision_point[i] = min_bound[i]; // Set to min boundary
-
+            normal = Vec3(0, 0, 0);
             normal[i] = -1; // Min face normal
+
             // Log the face hit
             if (i == 0) collidedFace = "Left (X-) face";
             if (i == 1) collidedFace = "Bottom (Y-) face";
             if (i == 2) collidedFace = "Back (Z-) face";
         }
+
         if (distToMax < min_dist) {
             min_dist = distToMax;
             collision_point = current_position;
             collision_point[i] = max_bound[i]; // Set to max boundary
-
+            normal = Vec3(0, 0, 0);
             normal[i] = 1; // Max face normal
+
             // Log the face hit
             if (i == 0) collidedFace = "Right (X+) face";
             if (i == 1) collidedFace = "Top (Y+) face";
             if (i == 2) collidedFace = "Front (Z+) face";
         }
     }
+
     // Set collision information but DO NOT move the particle yet
     colInfo.normal = normal;
     colInfo.position = collision_point;
-    // Log the collision point and face
-    std::cout << "Collision point: "
-              << collision_point[0] << " "
-              << collision_point[1] << " "
-              << collision_point[2] << std::endl;
-    std::cout << "Collided with: " << collidedFace << std::endl;
+
+
     return true;
 }
 
@@ -299,6 +296,7 @@ void ColliderParticles::resolveCollisionParticles(const Collision& col, double k
 {
     Particle* p1 = const_cast<Particle*>(col.p1);
     Particle* p2 = const_cast<Particle*>(col.p2);
+
     // Relative velocity between particles
     Vec3 relative_velocity = p1->vel - p2->vel;
 
@@ -330,10 +328,29 @@ void ColliderParticles::resolveCollisionParticles(const Collision& col, double k
     // Update velocities of both particles
     p1->vel += (normal_impulse + friction_impulse);
     p2->vel -= (normal_impulse + friction_impulse);
+
+    // --- Position Correction to prevent clipping ---
+
+    // Calculate the overlap distance (penetration depth)
+    double penetration_depth = p1->radius + p2->radius - (p1->pos - p2->pos).norm();
+
+    // If there is penetration, resolve it by moving the particles apart
+    if (penetration_depth > 0)
+    {
+        // Percentage to move each particle: here it's 50% each
+        double correction_factor = 0.5;  // Could be adjusted for different mass particles
+
+        // Position correction amount
+        Vec3 correction = penetration_depth * correction_factor * collision_normal;
+
+        // Apply the correction to the positions
+        p1->pos += correction;
+        p2->pos -= correction;
+    }
 }
+
 
 void ColliderParticles::setCellSize(double cellSize)
 {
     this->cellSize = 2;
 }
-

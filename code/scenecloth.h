@@ -8,6 +8,7 @@
 #include "widgetcloth.h"
 #include "particlesystem.h"
 #include "integrators.h"
+#include "colliders.h"
 
 
 class SceneCloth : public Scene
@@ -59,7 +60,7 @@ protected:
     bool showParticles = true;
 
     // physics
-    IntegratorEuler integrator; // TODO: pick a better one
+    IntegratorVerlet integrator; // TODO: pick a better one
     ParticleSystem system;
     ForceConstAcceleration* fGravity = nullptr;
     std::vector<ForceSpring*> springsStretch;
@@ -71,12 +72,19 @@ protected:
     double clothWidth, clothHeight;
     int numParticles, numParticlesX, numParticlesY;
     int selectedParticle = -1;
+    float restLengthStretch = 1.5;
+    float restLengthShear=restLengthStretch*sqrt(2);
+    float restLengthBend = restLengthStretch * 2;
+    float kS,kD;
 
     // collision properties
     bool checkCollisions = true;
     double colBounce = 0.01;
     double colFriction = 0.05;
     double particleRadius = 1;
+    ColliderParticles colliderParticles;
+    ColliderSphere colliderBall;
+    ColliderAABB  colliderCube;
 
     // mouse interaction
     int grabX, grabY;

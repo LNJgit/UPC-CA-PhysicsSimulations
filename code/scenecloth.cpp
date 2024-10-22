@@ -72,12 +72,16 @@ void SceneCloth::initialize() {
     // create gravity force
     fGravity = new ForceConstAcceleration();
     system.addForce(fGravity);
+    colliderParticles.setCellSize(2.0);
 
     // TODO: in my solution setup, these were the colliders
-    //colliderBall.setCenter(Vec3(40,-20,0));
-    //colliderBall.setRadius(30);
-    //colliderCube.setFromCenterSize(Vec3(-60,30,0), Vec3(60, 40, 60));
+    colliderBall.setCenter(Vec3(40,-20,0));
+    colliderBall.setRadius(30);
+    colliderCube.setFromCenterSize(Vec3(-60,30,0), Vec3(60, 40, 60));
     //colliderWalls.setFromCenterSize(Vec3(0, 0, 0), Vec3(200, 200, 200));
+
+    kS = widget->getStiffness();
+    kD = widget->getDamping();
 }
 
 void SceneCloth::reset()
@@ -115,33 +119,89 @@ void SceneCloth::reset()
 
     for (int i = 0; i < numParticlesX; i++) {
         for (int j = 0; j < numParticlesY; j++) {
+            int idx = i * numParticlesY + j;
 
-            int idx = i*numParticlesY + j;
+            // Determine if the particle is fixed
+            if (idx < numParticlesY ) {
+                fixedParticle[idx] = true;
+            } else {
+                fixedParticle[idx] = false;
+            }
 
-            // TODO: you can play here with different start positions and/or fixed particles
-            fixedParticle[idx] = false;
-            double tx = i*edgeX - 0.5*clothWidth;
-            double ty = j*edgeY - 0.5*clothHeight;
-            Vec3 pos = Vec3(ty+edgeY, 70 - tx - edgeX, 0);
+            // Calculate positions
+            double tx = i * edgeX - 0.5 * clothWidth;
+            double ty = j * edgeY - 0.5 * clothHeight;
+            Vec3 pos = Vec3(ty + edgeY, 70 - tx - edgeX, 0);
 
+            // Assuming Particle is instantiated as shown
             Particle* p = new Particle();
             p->id = idx;
             p->pos = pos;
             p->prevPos = pos;
-            p->vel = Vec3(0,0,0);
+            p->vel = Vec3(0, 0, 0);
             p->mass = 1;
             p->radius = particleRadius;
-            p->color = Vec3(235/255.0, 51/255.0, 36/255.0);
+
+            p->color = Vec3(230 / 255.0, 51 / 255.0, 36 / 255.0);
 
             system.addParticle(p);
             fGravity->addInfluencedParticle(p);
         }
     }
 
+
     // forces: gravity
     system.addForce(fGravity);
 
-    // TODO: create spring forces
+    // Connect particles with springs (both vertical and horizontal)
+    for (int i = 0; i < numParticlesX; i++) {
+        for (int j = 0; j < numParticlesY; j++) {
+            int idx = i * numParticlesY + j;
+            Particle* p = system.getParticle(idx);
+
+            // Vertical spring
+            if (i < numParticlesX - 1) {
+                Particle* p_down = system.getParticle(idx+numParticlesY);
+                springsStretch.push_back(new ForceSpring(p,p_down,restLengthStretch,kS,kD));
+                system.addForce(springsStretch.back());
+            }
+
+            // Horizontal spring
+            if (j < numParticlesY - 1) {
+                Particle* p_right = system.getParticle(idx + 1);
+                springsStretch.push_back(new ForceSpring(p, p_right,restLengthStretch,kS,kD));
+                system.addForce(springsStretch.back());
+            }
+
+            if (i < numParticlesX - 1) {
+                if (j < numParticlesY - 1) {
+                    Particle* p_bottom_right = system.getParticle(idx + numParticlesY + 1);
+                    springsShear.push_back(new ForceSpring(p, p_bottom_right,restLengthShear,kS,kD));
+                    system.addForce(springsShear.back());
+                }
+                if (j > 0) {
+                    Particle* p_bottom_left = system.getParticle(idx + numParticlesY - 1);
+                    springsShear.push_back(new ForceSpring(p, p_bottom_left, restLengthShear, kS, kD));
+                    system.addForce(springsShear.back());
+                }
+            }
+
+            // Vertical spring
+            if (i < numParticlesX - 2) {
+                Particle* p_down_bend = system.getParticle(idx+numParticlesY*2);
+                springsBend.push_back(new ForceSpring(p,p_down_bend,restLengthBend,kS,kD)); //FIX PLACEHOLDERS
+                system.addForce(springsBend.back());
+            }
+
+            // Horizontal spring
+            if (j < numParticlesY - 2) {
+                Particle* p_right_bend = system.getParticle(idx+2);
+                springsBend.push_back(new ForceSpring(p,p_right_bend,restLengthBend,kS,kD));
+                system.addForce(springsBend.back());
+            }
+        }
+    }
+
     // Code for PROVOT layout
     updateSprings();
 
@@ -173,16 +233,22 @@ void SceneCloth::reset()
 
 void SceneCloth::updateSprings()
 {
-    double ks = widget->getStiffness();
-    double kd = widget->getDamping();
+    kS = widget->getStiffness();
+    kD = widget->getDamping();
 
     // here I update all ks and kd parameters.
     // idea: if you want to enable/disable a spring type, you can set ks to 0 for these
     for (ForceSpring* f : springsStretch) {
+        f->setSpringConstant(kS);
+        f->setDampingCoeff(kD);
     }
     for (ForceSpring* f : springsShear) {
+        f->setDampingCoeff(kD);
+        f->setSpringConstant(kS);
     }
     for (ForceSpring* f : springsBend) {
+        f->setDampingCoeff(kD);
+        f->setSpringConstant(kS);
     }
 }
 
@@ -295,7 +361,6 @@ void SceneCloth::paint(const Camera& camera)
     glutils::checkGLError();
 }
 
-
 void SceneCloth::update(double dt)
 {
     // fixed particles: no velocity, no force acting
@@ -307,30 +372,83 @@ void SceneCloth::update(double dt)
         }
     }
 
-    // integration step
     Vecd ppos = system.getPositions();
     integrator.step(system, dt);
     system.setPreviousPositions(ppos);
 
-    // user interaction
+    colliderParticles.particleMap.clear();
+    for (Particle *p : system.getParticles())
+    {
+        colliderParticles.addParticle(p);
+    }
+
     if (selectedParticle >= 0) {
         Particle* p = system.getParticle(selectedParticle);
-        // p->pos = ?; TODO: assign cursor world position (see code, it's already computed)
-        p->vel = Vec3(0,0,0);
+        p->pos = p->pos + cursorWorldPos;
+        p->vel = Vec3(0, 0, 0);
 
-        // TODO: test and resolve for collisions during user movement
+        Collision colInfo;
+        for (Particle* otherParticle : system.getParticles()) {
+            if (otherParticle != p && colliderParticles.testCollision(otherParticle, colInfo)) {
+                colliderParticles.resolveCollisionParticles(colInfo, 0.0, 0.5);
+            }
+        }
     }
 
-    // TODO: relaxation
+    for (int iteration = 0; iteration < 2; iteration++) {
+        for (ForceSpring* f : springsStretch) {
+            Vec3 displacement = f->getParticle2()->pos - f->getParticle1()->pos;
+            double length = displacement.norm();
+            float correction_factor = (length - restLengthStretch) / length;
+            if(!fixedParticle[(f->getParticle1()->id)])
+            {
+                f->getParticle1()->pos += displacement * 0.5 * correction_factor;
+            }
+            if(!fixedParticle[(f->getParticle2()->id)])
+            {
+                f->getParticle2()->pos -= displacement * 0.5 * correction_factor;
+            }
+        }
 
-    // collisions
+        for (ForceSpring* f : springsShear) {
+            Vec3 displacement = f->getParticle2()->pos - f->getParticle1()->pos;
+            double length = displacement.norm();
+            float correction_factor = (length - restLengthShear) / length;
+            if(!fixedParticle[(f->getParticle1()->id)])
+            {
+                f->getParticle1()->pos += displacement * 0.5 * correction_factor;
+            }
+            if(!fixedParticle[(f->getParticle2()->id)])
+            {
+                f->getParticle2()->pos -= displacement * 0.5 * correction_factor;
+            }
+        }
+
+        for (ForceSpring* f : springsBend) {
+            Vec3 displacement = f->getParticle2()->pos - f->getParticle1()->pos;
+            double length = displacement.norm();
+            float correction_factor = (length - restLengthBend) / length;
+            if(!fixedParticle[(f->getParticle1()->id)])
+            {
+                f->getParticle1()->pos += displacement * 0.5 * correction_factor;
+            }
+            if(!fixedParticle[(f->getParticle2()->id)])
+            {
+                f->getParticle2()->pos -= displacement * 0.5 * correction_factor;
+            }
+        }
+    }
+
+    Collision colInfo;
     for (Particle* p : system.getParticles()) {
-        // TODO: test and resolve collisions
+        if(colliderParticles.testCollision(p, colInfo)) {
+            colliderParticles.resolveCollisionParticles(colInfo, 0.0, 0.5);
+        }
     }
 
-    // needed after we have done collisions and relaxation, since spring forces depend on p and v
     system.updateForces();
 }
+
 
 
 void SceneCloth::mousePressed(const QMouseEvent* e, const Camera& cam)
@@ -340,19 +458,44 @@ void SceneCloth::mousePressed(const QMouseEvent* e, const Camera& cam)
 
     if (!(e->modifiers() & Qt::ControlModifier)) {
 
-        Vec3 rayDir = cam.getRayDir(grabX, grabY);
-        Vec3 origin = cam.getPos();
+        // Get ray direction and origin from the camera
+        Vec3 rayDir = cam.getRayDir(grabX, grabY);  // Ray direction
+        Vec3 origin = cam.getPos();                 // Camera position (origin of the ray)
 
         selectedParticle = -1;
+        float selectionThreshold = 10.0f;  // Adjust this based on the scale of your scene
+        float minDist = std::numeric_limits<float>::max();  // Track the minimum distance
+        int closestParticle = -1;  // Track the closest particle's ID
+
+        // Iterate through all particles
         for (int i = 0; i < numParticles; i++) {
-            // TODO: point-ray dist to check if we select one particle
+            Particle* p = system.getParticle(i);
+            Vec3 particlePos = p->pos;
+
+            // Calculate the vector from ray origin to particle position
+            Vec3 originToParticle = particlePos - origin;
+
+            // Find the distance from the particle to the ray
+            Vec3 crossProd = originToParticle.cross(rayDir);
+            float distToRay = crossProd.norm() / rayDir.norm();
+
+            // Check if the particle is within the selection threshold and closer than the previous particle
+            if (distToRay < selectionThreshold && distToRay < minDist) {
+                minDist = distToRay;  // Update closest distance
+                closestParticle = p->id;  // Update closest particle ID
+            }
         }
+
+        // Select the closest particle if found
+        selectedParticle = closestParticle;
 
         if (selectedParticle >= 0) {
             cursorWorldPos = system.getParticle(selectedParticle)->pos;
+            std::cout << "Selected particle is: [" << cursorWorldPos[0] << "] [" << cursorWorldPos[1] << "] [" << cursorWorldPos[2] << "] " << std::endl;
         }
     }
 }
+
 
 void SceneCloth::mouseMoved(const QMouseEvent* e, const Camera& cam)
 {

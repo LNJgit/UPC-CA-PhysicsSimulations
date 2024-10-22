@@ -19,3 +19,23 @@ WidgetFountain::~WidgetFountain()
 double WidgetFountain::getGravity() const {
     return ui->gravity->value();
 }
+
+double WidgetFountain::getEmitRate() const {
+    return ui->emitRate->value();
+}
+
+double WidgetFountain::getElasticity() const {
+    return ui->elasticityCoefficient->value();
+}
+
+double WidgetFountain::getFriction() const {
+    return ui->frictionCoeff->value();
+}
+
+double WidgetFountain::getParticleLife() const
+{
+    return ui->particleLife->value();
+}
+
+
+

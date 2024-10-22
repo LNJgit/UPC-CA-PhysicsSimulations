@@ -15,6 +15,10 @@ public:
     ~WidgetFountain();
 
     double getGravity()    const;
+    double getEmitRate()   const;
+    double getFriction()   const;
+    double getElasticity() const;
+    double getParticleLife() const;
 
 signals:
     void updatedParameters();

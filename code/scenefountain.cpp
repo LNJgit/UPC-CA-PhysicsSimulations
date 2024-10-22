@@ -84,12 +84,14 @@ void SceneFountain::updateSimParams()
     // get gravity from UI and update force
     double g = widget->getGravity();
     fGravity->setAcceleration(Vec3(0, -g, 0));
+    emitRate = widget->getEmitRate();
+    kFriction= widget->getFriction();
+    kBounce  = widget->getElasticity();
+    maxParticleLife = widget->getParticleLife();
 
-    // get other relevant UI values and update simulation params
-    kBounce = 0.5;
-    kFriction = 0.1;
-    maxParticleLife = 10.0;
-    emitRate = 200;
+
+
+
 }
 
 

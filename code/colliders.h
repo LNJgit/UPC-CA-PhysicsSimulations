@@ -39,6 +39,8 @@ public:
 
     virtual bool isInside(const Particle* p) const;
     virtual bool testCollision(const Particle* p, Collision& colInfo) const;
+    Vec3 getNormal() {return planeN;}
+    double getD() {return planeD;}
 
 protected:
     Vec3 planeN;

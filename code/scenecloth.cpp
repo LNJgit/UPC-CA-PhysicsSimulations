@@ -3,6 +3,9 @@
 #include "model.h"
 #include <QOpenGLFunctions_3_3_Core>
 #include <QOpenGLBuffer>
+#include <chrono>
+#include <iomanip>
+#include <ctime>
 
 
 SceneCloth::SceneCloth() {
@@ -149,6 +152,10 @@ void SceneCloth::reset()
         }
     }
 
+    restLengthStretch = edgeX;
+    restLengthShear = restLengthStretch * sqrt(2);
+    restLengthBend  = restLengthStretch * 2;
+
 
     // forces: gravity
     system.addForce(fGravity);
@@ -236,8 +243,6 @@ void SceneCloth::updateSprings()
     kS = widget->getStiffness();
     kD = widget->getDamping();
 
-    // here I update all ks and kd parameters.
-    // idea: if you want to enable/disable a spring type, you can set ks to 0 for these
     for (ForceSpring* f : springsStretch) {
         f->setSpringConstant(kS);
         f->setDampingCoeff(kD);
@@ -321,6 +326,18 @@ void SceneCloth::paint(const Camera& camera)
 
     // TODO: draw colliders and walls
 
+    // draw sphere
+    vaoSphereL->bind();
+    Vec3 cc = colliderBall.getCenter();
+    modelMat = QMatrix4x4();
+    modelMat.translate(cc[0], cc[1], cc[2]);
+    modelMat.scale(colliderBall.getRadius());
+    shaderPhong->setUniformValue("ModelMatrix", modelMat);
+    shaderPhong->setUniformValue("matdiff", 0.8f, 0.4f, 0.4f);
+    shaderPhong->setUniformValue("matspec", 0.0f, 0.0f, 0.0f);
+    shaderPhong->setUniformValue("matshin", 0.0f);
+    glFuncs->glDrawElements(GL_TRIANGLES, 3*numFacesSphereL, GL_UNSIGNED_INT, 0);
+
     shaderPhong->release();
 
 
@@ -383,73 +400,86 @@ void SceneCloth::update(double dt)
     }
 
     if (selectedParticle >= 0) {
+        Collision colInfo;
         Particle* p = system.getParticle(selectedParticle);
         p->pos = p->pos + cursorWorldPos;
         p->vel = Vec3(0, 0, 0);
 
-        Collision colInfo;
-        for (Particle* otherParticle : system.getParticles()) {
-            if (otherParticle != p && colliderParticles.testCollision(otherParticle, colInfo)) {
-                colliderParticles.resolveCollisionParticles(colInfo, 0.0, 0.5);
-            }
+        for (Particle* p : system.getParticles()) {
+            checkAndResolveCollision(p);
         }
     }
+
 
     for (int iteration = 0; iteration < 2; iteration++) {
         for (ForceSpring* f : springsStretch) {
             Vec3 displacement = f->getParticle2()->pos - f->getParticle1()->pos;
             double length = displacement.norm();
             float correction_factor = (length - restLengthStretch) / length;
-            if(!fixedParticle[(f->getParticle1()->id)])
-            {
+
+            // Apply position correction for Particle 1 and check for collisions
+            if (!fixedParticle[f->getParticle1()->id]) {
                 f->getParticle1()->pos += displacement * 0.5 * correction_factor;
+                checkAndResolveCollision(f->getParticle1());
             }
-            if(!fixedParticle[(f->getParticle2()->id)])
-            {
+
+            // Apply position correction for Particle 2 and check for collisions
+            if (!fixedParticle[f->getParticle2()->id]) {
                 f->getParticle2()->pos -= displacement * 0.5 * correction_factor;
+                checkAndResolveCollision(f->getParticle2());
             }
         }
 
+        // Repeat for shear springs
         for (ForceSpring* f : springsShear) {
             Vec3 displacement = f->getParticle2()->pos - f->getParticle1()->pos;
             double length = displacement.norm();
             float correction_factor = (length - restLengthShear) / length;
-            if(!fixedParticle[(f->getParticle1()->id)])
-            {
+
+            if (!fixedParticle[f->getParticle1()->id]) {
                 f->getParticle1()->pos += displacement * 0.5 * correction_factor;
+                checkAndResolveCollision(f->getParticle1());
             }
-            if(!fixedParticle[(f->getParticle2()->id)])
-            {
+
+            if (!fixedParticle[f->getParticle2()->id]) {
                 f->getParticle2()->pos -= displacement * 0.5 * correction_factor;
+                checkAndResolveCollision(f->getParticle2());
             }
         }
 
+        // Repeat for bend springs
         for (ForceSpring* f : springsBend) {
             Vec3 displacement = f->getParticle2()->pos - f->getParticle1()->pos;
             double length = displacement.norm();
             float correction_factor = (length - restLengthBend) / length;
-            if(!fixedParticle[(f->getParticle1()->id)])
-            {
+
+            if (!fixedParticle[f->getParticle1()->id]) {
                 f->getParticle1()->pos += displacement * 0.5 * correction_factor;
+                checkAndResolveCollision(f->getParticle1());
             }
-            if(!fixedParticle[(f->getParticle2()->id)])
-            {
+
+            if (!fixedParticle[f->getParticle2()->id]) {
                 f->getParticle2()->pos -= displacement * 0.5 * correction_factor;
+                checkAndResolveCollision(f->getParticle2());
             }
         }
     }
 
-    Collision colInfo;
-    for (Particle* p : system.getParticles()) {
-        if(colliderParticles.testCollision(p, colInfo)) {
-            colliderParticles.resolveCollisionParticles(colInfo, 0.0, 0.5);
-        }
-    }
 
     system.updateForces();
 }
 
+void SceneCloth::checkAndResolveCollision(Particle* p) {
+    Collision colInfo;
 
+    // Check for collision with the sphere collider
+    if (colliderBall.testCollision(p, colInfo)) {
+        colliderBall.resolveCollision(p, colInfo, colBounce, colFriction);
+    }
+    if(colliderParticles.testCollision(p, colInfo)) {
+        colliderParticles.resolveCollisionParticles(colInfo, colBounce, colFriction);
+    }
+}
 
 void SceneCloth::mousePressed(const QMouseEvent* e, const Camera& cam)
 {

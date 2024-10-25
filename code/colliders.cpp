@@ -8,19 +8,29 @@
  */
 void Collider::resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction) const
 {
-    //We need to reflect the particle velocity.
-    Vec3 current_particle_velocity = p->vel;
-    double dot_product_normal = current_particle_velocity.dot(col.normal);  //This should be with next velocity not current (FIX)
-    Vec3 normal_velocity = dot_product_normal*col.normal;
-    Vec3 tangent_velocity = current_particle_velocity-normal_velocity;
+    // Compute the next velocity by reflecting based on the collision normal
+    Vec3 current_velocity = p->vel;
+    double dot_product_normal = current_velocity.dot(col.normal);
+    Vec3 normal_velocity = dot_product_normal * col.normal;
+    Vec3 tangent_velocity = current_velocity - normal_velocity;
 
-    Vec3 new_normal_velocity = -kElastic*normal_velocity;
-    Vec3 new_tangent_velocity = (1-kFriction) * tangent_velocity;
+    // Apply elasticity and friction to get new velocities
+    Vec3 new_normal_velocity = -kElastic * normal_velocity;
+    Vec3 new_tangent_velocity = (1 - kFriction) * tangent_velocity;
 
-    p->vel = (new_normal_velocity+new_tangent_velocity);
-    p->pos = col.position;
+    // Update the particle's velocity
+    p->vel = new_normal_velocity + new_tangent_velocity;
 
+    // Position correction to prevent clipping or excessive bounces
+    double penetration_depth = -(col.normal.dot(p->pos - col.position)) + p->radius;
+
+    // Soft position correction to avoid high speeds
+    double correction_factor = 0.5; // Adjust this for smoother responses, if needed
+    if (penetration_depth > 0) {
+        p->pos += col.normal * (penetration_depth * correction_factor);
+    }
 }
+
 
 
 
@@ -29,20 +39,16 @@ void Collider::resolveCollision(Particle* p, const Collision& col, double kElast
  */
 bool ColliderPlane::isInside(const Particle* p) const
 {
-    Vec3 particle_current_position = p->pos;
-    double dot= particle_current_position.dot(this->planeN) +this->planeD;
+    // Calculate the distance from the particle center to the plane
+    double distance_to_plane = p->pos.dot(this->planeN) + this->planeD;
 
-    if (dot <= 0)
-    {
-        return true;
-    }
+    // Use a small offset for early detection (e.g., 10% of particle radius)
+    double early_detection_offset = 0.1 * p->radius;
 
-    else
-    {
-        return false;
-    }
-
+    // Return true if the particle is within its radius + offset from the plane
+    return (distance_to_plane <= p->radius + early_detection_offset);
 }
+
 
 
 bool ColliderPlane::testCollision(const Particle* p, Collision& colInfo) const
@@ -74,16 +80,17 @@ bool ColliderPlane::testCollision(const Particle* p, Collision& colInfo) const
  */
 bool ColliderSphere::isInside(const Particle* p) const
 {
-    Vec3 particle_current_position = p->pos;
+    Vec3 particle_position = p->pos;
     Vec3 center_of_sphere = this->getCenter();
-    double distance_from_center = (particle_current_position-center_of_sphere).norm();
+    double distance_from_center = (particle_position - center_of_sphere).norm();
 
-    if (distance_from_center < this->getRadius())
-    {
-        return true;
-    }
-    else{ return false;}
+    // Use a small offset for early detection
+    double early_detection_offset = 0.1 * p->radius;
+
+    // Check if the particle's surface is within the sphere radius plus offset
+    return (distance_from_center <= this->getRadius() + p->radius + early_detection_offset);
 }
+
 
 
 bool ColliderSphere::testCollision(const Particle* p, Collision& colInfo) const
@@ -122,15 +129,19 @@ bool ColliderSphere::testCollision(const Particle* p, Collision& colInfo) const
  */
 bool ColliderAABB::isInside(const Particle* p) const
 {
-    Vec3 current_particle_position = p->pos;
+    Vec3 particle_position = p->pos;
     Vec3 max_bound = this->bmax;
     Vec3 min_bound = this->bmin;
 
-    // Check if the particle's position is within bounds on all axes
-    return (min_bound[0] < current_particle_position[0] && current_particle_position[0] < max_bound[0]) &&
-           (min_bound[1] < current_particle_position[1] && current_particle_position[1] < max_bound[1]) &&
-           (min_bound[2] < current_particle_position[2] && current_particle_position[2] < max_bound[2]);
+    // Early detection offset (e.g., 10% of the particle's radius)
+    double early_detection_offset = 0.9 * p->radius;
+
+    // Check if the particle is within its radius + offset from each boundary of the AABB
+    return (min_bound[0] - early_detection_offset < particle_position[0] && particle_position[0] < max_bound[0] + early_detection_offset) &&
+           (min_bound[1] - early_detection_offset < particle_position[1] && particle_position[1] < max_bound[1] + early_detection_offset) &&
+           (min_bound[2] - early_detection_offset < particle_position[2] && particle_position[2] < max_bound[2] + early_detection_offset);
 }
+
 
 
 
@@ -292,6 +303,8 @@ bool ColliderParticles::isWithinRadius(const Vec3& vec1, const Vec3& vec2, doubl
     return difference.norm() < 2*radius; // Check for collision
 }
 
+#include <random>  // for random number generation
+
 void ColliderParticles::resolveCollisionParticles(const Collision& col, double kBounce, double kFriction)
 {
     Particle* p1 = const_cast<Particle*>(col.p1);
@@ -307,8 +320,7 @@ void ColliderParticles::resolveCollisionParticles(const Collision& col, double k
     double velocity_along_normal = relative_velocity.dot(collision_normal);
 
     // If velocity is separating, no collision to resolve
-    if (velocity_along_normal > 0)
-    {
+    if (velocity_along_normal > 0) {
         return;
     }
 
@@ -329,25 +341,33 @@ void ColliderParticles::resolveCollisionParticles(const Collision& col, double k
     p1->vel += (normal_impulse + friction_impulse);
     p2->vel -= (normal_impulse + friction_impulse);
 
-    // --- Position Correction to prevent clipping ---
+    // --- Position Correction with Conditional Z-Axis Offset ---
 
     // Calculate the overlap distance (penetration depth)
     double penetration_depth = p1->radius + p2->radius - (p1->pos - p2->pos).norm();
 
     // If there is penetration, resolve it by moving the particles apart
-    if (penetration_depth > 0)
-    {
-        // Percentage to move each particle: here it's 50% each
+    if (penetration_depth > 0) {
         double correction_factor = 0.5;  // Could be adjusted for different mass particles
 
-        // Position correction amount
+        // Position correction along the normal
         Vec3 correction = penetration_depth * correction_factor * collision_normal;
 
-        // Apply the correction to the positions
-        p1->pos += correction;
-        p2->pos -= correction;
+        // Determine if Z-offset should be applied based on crumbling/impact conditions
+        bool apply_z_offset = (penetration_depth > (p1->radius + p2->radius)) || (std::abs(velocity_along_normal) > 100.0);
+
+        Vec3 z_offset(0, 0, 0);
+        if (apply_z_offset) {
+            // Random Z-offset for sliding when particles are crumbled up or impacting hard
+            double random_offset_z = ((std::rand() % 200) - 100) / 1000.0;  // Random offset between -0.1 and 0.1
+            z_offset = Vec3(0, 0, random_offset_z);
+        }
+        // Apply the correction and the random Z-axis offset
+        p1->pos += correction + z_offset;
+        p2->pos -= correction + z_offset;
     }
 }
+
 
 
 void ColliderParticles::setCellSize(double cellSize)

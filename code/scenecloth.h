@@ -36,6 +36,7 @@ public:
     virtual unsigned int getNumParticles() { return system.getNumParticles(); }
 
     virtual QWidget* sceneUI() { return widget; }
+    void checkAndResolveCollision(Particle* p);
 
 public slots:
     void updateSprings();
@@ -72,9 +73,9 @@ protected:
     double clothWidth, clothHeight;
     int numParticles, numParticlesX, numParticlesY;
     int selectedParticle = -1;
-    float restLengthStretch = 1.5;
-    float restLengthShear=restLengthStretch*sqrt(2);
-    float restLengthBend = restLengthStretch * 2;
+    float restLengthStretch;
+    float restLengthShear;
+    float restLengthBend;
     float kS,kD;
 
     // collision properties

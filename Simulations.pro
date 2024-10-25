@@ -23,9 +23,11 @@ SOURCES += \
     code/scenecloth.cpp \
     code/scenefountain.cpp \
     code/sceneprojectiles.cpp \
+    code/scenesph.cpp \
     code/widgetcloth.cpp \
     code/widgetfountain.cpp \
     code/widgetprojectiles.cpp \
+    code/widgetsph.cpp
 
 HEADERS += \
     code/camera.h \
@@ -43,12 +45,15 @@ HEADERS += \
     code/scenecloth.h \
     code/scenefountain.h \
     code/sceneprojectiles.h \
+    code/scenesph.h \
     code/widgetcloth.h \
     code/widgetfountain.h \
     code/widgetprojectiles.h \
+    code/widgetsph.h
 
 FORMS += \
     forms/mainwindow.ui \
+    forms/widgetSPH.ui \
     forms/widgetcloth.ui \
     forms/widgetfountain.ui \
     forms/widgetprojectiles.ui \

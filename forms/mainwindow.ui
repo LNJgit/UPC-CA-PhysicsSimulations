@@ -42,7 +42,7 @@
             <string>Time step:</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignRight|Qt::AlignTrailing|Qt::AlignVCenter</set>
+            <set>Qt::AlignmentFlag::AlignRight|Qt::AlignmentFlag::AlignTrailing|Qt::AlignmentFlag::AlignVCenter</set>
            </property>
           </widget>
          </item>
@@ -110,7 +110,7 @@
             <string>No scene loaded</string>
            </property>
            <property name="alignment">
-            <set>Qt::AlignCenter</set>
+            <set>Qt::AlignmentFlag::AlignCenter</set>
            </property>
           </widget>
          </item>
@@ -137,7 +137,7 @@
      <x>0</x>
      <y>0</y>
      <width>1000</width>
-     <height>22</height>
+     <height>30</height>
     </rect>
    </property>
    <widget class="QMenu" name="menuScene">
@@ -147,6 +147,7 @@
     <addaction name="actionSceneProjectiles"/>
     <addaction name="actionSceneFountain"/>
     <addaction name="actionSceneCloth"/>
+    <addaction name="actionSPH"/>
    </widget>
    <widget class="QMenu" name="menuCamera">
     <property name="title">
@@ -163,37 +164,42 @@
   <widget class="QStatusBar" name="statusbar"/>
   <action name="actionSceneFountain">
    <property name="text">
-    <string>Fountain</string>
+    <string>&amp;Fountain</string>
    </property>
   </action>
   <action name="actionCameraReset">
    <property name="text">
-    <string>Reset</string>
+    <string>&amp;Reset</string>
    </property>
   </action>
   <action name="actionSceneProjectiles">
    <property name="text">
-    <string>Projectiles</string>
+    <string>&amp;Projectiles</string>
    </property>
   </action>
   <action name="actionCameraX">
    <property name="text">
-    <string>Align +X</string>
+    <string>&amp;Align +X</string>
    </property>
   </action>
   <action name="actionCameraY">
    <property name="text">
-    <string>Align +Y</string>
+    <string>Align +&amp;Y</string>
    </property>
   </action>
   <action name="actionCameraZ">
    <property name="text">
-    <string>Align +Z</string>
+    <string>Align +&amp;Z</string>
    </property>
   </action>
   <action name="actionSceneCloth">
    <property name="text">
-    <string>Cloth</string>
+    <string>&amp;Cloth</string>
+   </property>
+  </action>
+  <action name="actionSPH">
+   <property name="text">
+    <string>SPH</string>
    </property>
   </action>
  </widget>

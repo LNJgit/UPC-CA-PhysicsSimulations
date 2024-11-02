@@ -2,6 +2,34 @@
 #include <cmath>
 #include <iostream>
 
+void Collider::resolveCollisions(Particle* p, const std::vector<Collision>& collisions, double kElastic, double kFriction)
+{
+    Vec3 totalNormal(0, 0, 0);
+    Vec3 totalCorrection(0, 0, 0);
+
+    for (const Collision& col : collisions) {
+        totalNormal += col.normal;
+
+        double penetration_depth = p->radius - (p->pos - col.position).dot(col.normal);
+        if (penetration_depth > 0) {
+            totalCorrection += col.normal * penetration_depth;
+        }
+    }
+
+    if (totalNormal.norm() > 0) {
+        Vec3 normal = totalNormal.normalized();
+
+        Vec3 vel_normal = normal * (p->vel.dot(normal));
+        Vec3 vel_tangent = p->vel - vel_normal;
+
+        vel_normal *= -kElastic;
+        vel_tangent *= (1 - kFriction);
+
+        p->vel = vel_normal + vel_tangent;
+    }
+
+    p->pos += totalCorrection * 0.8; // Reduced position correction to damp oscillations
+}
 
 /*
  * Generic function for collision response from contact plane
@@ -353,18 +381,8 @@ void ColliderParticles::resolveCollisionParticles(const Collision& col, double k
         // Position correction along the normal
         Vec3 correction = penetration_depth * correction_factor * collision_normal;
 
-        // Determine if Z-offset should be applied based on crumbling/impact conditions
-        bool apply_z_offset = (penetration_depth > (p1->radius + p2->radius)) || (std::abs(velocity_along_normal) > 100.0);
-
-        Vec3 z_offset(0, 0, 0);
-        if (apply_z_offset) {
-            // Random Z-offset for sliding when particles are crumbled up or impacting hard
-            double random_offset_z = ((std::rand() % 200) - 100) / 1000.0;  // Random offset between -0.1 and 0.1
-            z_offset = Vec3(0, 0, random_offset_z);
-        }
-        // Apply the correction and the random Z-axis offset
-        p1->pos += correction + z_offset;
-        p2->pos -= correction + z_offset;
+        p1->pos += correction;
+        p2->pos -= correction;
     }
 }
 

@@ -3,12 +3,14 @@
 
 #include <QOpenGLShaderProgram>
 #include <QOpenGLVertexArrayObject>
+#include <QOpenGLFunctions_3_3_Core>
 #include <list>
 #include "scene.h"
 #include "widgetsph.h"
 #include "particlesystem.h"
 #include "integrators.h"
 #include "colliders.h"
+#include "sph.h"
 
 
 class SceneSPH : public Scene
@@ -33,6 +35,11 @@ public:
     virtual unsigned int getNumParticles() { return system.getNumParticles(); }
 
     virtual QWidget* sceneUI() { return widget; }
+public:
+    void initializeCube(int numParticles, double x, double y, double z);
+    void drawColliderCube(const ColliderAABB& collider, QOpenGLShaderProgram* shader, QOpenGLFunctions* glFuncs);
+    void createColliderContainer(double width, double height, double depth);
+    void initializeGhostParticles(double width, double height, double depth);
 
 public slots:
     void updateSimParams();
@@ -43,20 +50,31 @@ protected:
     QOpenGLShaderProgram* shader = nullptr;
     QOpenGLVertexArrayObject* vaoSphereL = nullptr;
     QOpenGLVertexArrayObject* vaoSphereH = nullptr;
-    QOpenGLVertexArrayObject* vaoCube    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube1    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube2    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube3    = nullptr;
     QOpenGLVertexArrayObject* vaoFloor   = nullptr;
     unsigned int numFacesSphereL = 0, numFacesSphereH = 0;
 
-    IntegratorEuler integrator;
+    IntegratorSymplecticEuler integrator;
     ParticleSystem system;
     ForceConstAcceleration* fGravity;
 
     ColliderPlane colliderFloor;
     ColliderSphere colliderSphere;
-    ColliderAABB   colliderBox;
     ColliderParticles colliderParticles;
+    ColliderAABB colliderBox1,colliderBox2,colliderBox3,colliderBox4;
 
-    float kBounce,kFriction;
+    float kBounce = 0.2;
+    float kFriction = 0.0;
+
+    int numInitialParticles=4000;
+
+    double cellSize = 2.0f;
+    double smoothingLength = 2.0f;
+    double restDensity = 1000.0f;
+    double viscosity = 0.001f;
+    SPH sph;
 
 
     int mouseX, mouseY;

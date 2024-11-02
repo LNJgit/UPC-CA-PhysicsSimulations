@@ -60,6 +60,18 @@ void SceneFountain::initialize() {
     colliderSphere.setCenter(Vec3(0,0,0));
     colliderSphere.setRadius(10);
     colliderBox.setFromBounds(Vec3(30,0,20), Vec3(50,10,60));
+
+    ColliderAABB colliderBox1,colliderBox2,colliderBox3,colliderBox4;
+    colliderBox1.setFromBounds(Vec3(-10, -5, 10), Vec3(10, 5, 11)); // Front face at z = 10
+
+    // Back Wall (aligned along x-axis, positioned along z-axis)
+    colliderBox2.setFromBounds(Vec3(-10, -5, -11), Vec3(10, 5, -10)); // Back face at z = -10
+
+    // Left Wall (aligned along z-axis, positioned along x-axis)
+    colliderBox3.setFromBounds(Vec3(-11, -5, -10), Vec3(-10, 5, 10)); // Left face at x = -10
+
+    // Right Wall (aligned along z-axis, positioned along x-axis)
+    colliderBox4.setFromBounds(Vec3(10, -5, -10), Vec3(11, 5, 10)); // Right face at x = 10
     colliderParticles.setCellSize(1);
 }
 

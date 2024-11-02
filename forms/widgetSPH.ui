@@ -23,18 +23,17 @@
    </item>
    <item row="0" column="1">
     <widget class="QDoubleSpinBox" name="density">
+     <property name="maximum">
+      <double>1000.000000000000000</double>
+     </property>
      <property name="singleStep">
-      <double>0.1</double>
+      <double>0.100000000000000</double>
      </property>
      <property name="value">
-      <double>1.0</double>
-     </property>
-     <property name="maximum">
-      <double>1000.0</double>
+      <double>1.000000000000000</double>
      </property>
     </widget>
    </item>
-
    <item row="1" column="0">
     <widget class="QLabel" name="label_viscosity">
      <property name="text">
@@ -44,18 +43,17 @@
    </item>
    <item row="1" column="1">
     <widget class="QDoubleSpinBox" name="viscosity">
+     <property name="maximum">
+      <double>10.000000000000000</double>
+     </property>
      <property name="singleStep">
-      <double>0.01</double>
+      <double>0.010000000000000</double>
      </property>
      <property name="value">
-      <double>0.1</double>
-     </property>
-     <property name="maximum">
-      <double>10.0</double>
+      <double>0.100000000000000</double>
      </property>
     </widget>
    </item>
-
    <item row="2" column="0">
     <widget class="QLabel" name="label_surfaceTension">
      <property name="text">
@@ -65,18 +63,17 @@
    </item>
    <item row="2" column="1">
     <widget class="QDoubleSpinBox" name="surfaceTension">
+     <property name="maximum">
+      <double>1.000000000000000</double>
+     </property>
      <property name="singleStep">
-      <double>0.01</double>
+      <double>0.010000000000000</double>
      </property>
      <property name="value">
-      <double>0.5</double>
-     </property>
-     <property name="maximum">
-      <double>1.0</double>
+      <double>0.500000000000000</double>
      </property>
     </widget>
    </item>
-
    <item row="3" column="0">
     <widget class="QLabel" name="label_pressureStiffness">
      <property name="text">
@@ -86,18 +83,17 @@
    </item>
    <item row="3" column="1">
     <widget class="QDoubleSpinBox" name="pressureStiffness">
+     <property name="maximum">
+      <double>10000.000000000000000</double>
+     </property>
      <property name="singleStep">
-      <double>0.1</double>
+      <double>0.100000000000000</double>
      </property>
      <property name="value">
-      <double>1000.0</double>
-     </property>
-     <property name="maximum">
-      <double>10000.0</double>
+      <double>99.989999999999995</double>
      </property>
     </widget>
    </item>
-
    <item row="4" column="0">
     <widget class="QLabel" name="label_particleMass">
      <property name="text">
@@ -107,18 +103,17 @@
    </item>
    <item row="4" column="1">
     <widget class="QDoubleSpinBox" name="particleMass">
+     <property name="maximum">
+      <double>10.000000000000000</double>
+     </property>
      <property name="singleStep">
-      <double>0.1</double>
+      <double>0.100000000000000</double>
      </property>
      <property name="value">
-      <double>1.0</double>
-     </property>
-     <property name="maximum">
-      <double>10.0</double>
+      <double>1.000000000000000</double>
      </property>
     </widget>
    </item>
-
    <item row="5" column="0" colspan="2">
     <widget class="QPushButton" name="btnUpdate">
      <property name="text">
@@ -126,7 +121,6 @@
      </property>
     </widget>
    </item>
-
   </layout>
  </widget>
  <resources/>

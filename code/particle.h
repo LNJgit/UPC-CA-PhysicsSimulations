@@ -17,6 +17,9 @@ public:
     double life   = 0.0;
     Vec3 color    = Vec3(1, 1, 1);
     unsigned int id = 0;
+    float density;
+    float pressure;
+    bool ghost;
 
     Particle() {
         pos	    = Vec3(0.0, 0.0, 0.0);

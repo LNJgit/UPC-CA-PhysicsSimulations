@@ -24,6 +24,7 @@ SOURCES += \
     code/scenefountain.cpp \
     code/sceneprojectiles.cpp \
     code/scenesph.cpp \
+    code/sph.cpp \
     code/widgetcloth.cpp \
     code/widgetfountain.cpp \
     code/widgetprojectiles.cpp \
@@ -46,6 +47,7 @@ HEADERS += \
     code/scenefountain.h \
     code/sceneprojectiles.h \
     code/scenesph.h \
+    code/sph.h \
     code/widgetcloth.h \
     code/widgetfountain.h \
     code/widgetprojectiles.h \

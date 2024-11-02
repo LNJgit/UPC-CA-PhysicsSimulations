@@ -10,6 +10,7 @@ struct Collision {
     Vec3 normal;
     const Particle* p1;
     const Particle* p2;
+    bool collisionWall;
 };
 
 
@@ -24,6 +25,7 @@ public:
     virtual bool testCollision(const Particle* p, Collision& colInfo) const = 0;
 
     virtual void resolveCollision(Particle* p, const Collision& col, double kElastic, double kFriction) const;
+    static void resolveCollisions(Particle* p, const std::vector<Collision>& collisions, double kElastic, double kFriction);
 };
 
 
@@ -79,6 +81,7 @@ public:
     int getHashValue(const Particle* p) const;
     bool isInside(const Particle* p) const;
     void addParticle(Particle *p);
+    int getHashValueForOffset(const Particle* p, int dx, int dy, int dz) const;
     bool testCollision(const Particle* p, Collision& colInfo) const;
     bool isWithinRadius(const Vec3& vec1, const Vec3& vec2, double radius) const; // Mark as const
     void setCellSize(double cellSize);

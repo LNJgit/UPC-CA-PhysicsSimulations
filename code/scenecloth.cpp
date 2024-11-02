@@ -78,10 +78,9 @@ void SceneCloth::initialize() {
     colliderParticles.setCellSize(2.0);
 
     // TODO: in my solution setup, these were the colliders
-    colliderBall.setCenter(Vec3(40,-20,0));
+    colliderBall.setCenter(Vec3(15,-20,0.5));
     colliderBall.setRadius(30);
-    colliderCube.setFromCenterSize(Vec3(-60,30,0), Vec3(60, 40, 60));
-    //colliderWalls.setFromCenterSize(Vec3(0, 0, 0), Vec3(200, 200, 200));
+    colliderCube.setFromCenterSize(Vec3(-60,0,0), Vec3(60, 10, 60));
 
     kS = widget->getStiffness();
     kD = widget->getDamping();
@@ -338,6 +337,20 @@ void SceneCloth::paint(const Camera& camera)
     shaderPhong->setUniformValue("matshin", 0.0f);
     glFuncs->glDrawElements(GL_TRIANGLES, 3*numFacesSphereL, GL_UNSIGNED_INT, 0);
 
+    // draw box
+    vaoCube->bind();
+    cc = colliderCube.getCenter();
+    Vec3 hs = 0.5*colliderCube.getSize();
+    modelMat = QMatrix4x4();
+    modelMat.translate(cc[0], cc[1], cc[2]);
+    modelMat.scale(hs[0], hs[1], hs[2]);
+    shaderPhong->setUniformValue("ModelMatrix", modelMat);
+    shaderPhong->setUniformValue("matdiff", 0.4f, 0.8f, 0.4f);
+    shaderPhong->setUniformValue("matspec", 0.0f, 0.0f, 0.0f);
+    shaderPhong->setUniformValue("matshin", 0.0f);
+    glFuncs->glDrawElements(GL_TRIANGLES, 3*2*6, GL_UNSIGNED_INT, 0);
+    vaoCube->release();
+
     shaderPhong->release();
 
 
@@ -374,6 +387,8 @@ void SceneCloth::paint(const Camera& camera)
     glFuncs->glDrawElements(GL_TRIANGLES, numMeshIndices, GL_UNSIGNED_INT, 0);
     vaoMesh->release();
     shaderCloth->release();
+
+
 
     glutils::checkGLError();
 }
@@ -475,6 +490,9 @@ void SceneCloth::checkAndResolveCollision(Particle* p) {
     // Check for collision with the sphere collider
     if (colliderBall.testCollision(p, colInfo)) {
         colliderBall.resolveCollision(p, colInfo, colBounce, colFriction);
+    }
+    if (colliderCube.testCollision(p, colInfo)) {
+        colliderCube.resolveCollision(p, colInfo, colBounce, colFriction);
     }
     if(colliderParticles.testCollision(p, colInfo)) {
         colliderParticles.resolveCollisionParticles(colInfo, colBounce, colFriction);

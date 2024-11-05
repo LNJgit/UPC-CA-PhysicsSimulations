@@ -10,7 +10,6 @@
 #include "integrators.h"
 #include "colliders.h"
 
-
 class SceneCloth : public Scene
 {
     Q_OBJECT
@@ -31,7 +30,7 @@ public:
 
     virtual void getSceneBounds(Vec3& bmin, Vec3& bmax) {
         bmin = Vec3(-100, -100, -100);
-        bmax = Vec3( 100,  100,  100);
+        bmax = Vec3(100, 100, 100);
     }
     virtual unsigned int getNumParticles() { return system.getNumParticles(); }
 
@@ -44,31 +43,31 @@ public slots:
     void freeAnchors();
 
 protected:
-    // ui
+    // UI
     WidgetCloth* widget = nullptr;
 
-    // opengl & render
+    // OpenGL and Rendering
     QOpenGLShaderProgram* shaderPhong = nullptr;
     QOpenGLShaderProgram* shaderCloth = nullptr;
     QOpenGLVertexArrayObject* vaoSphereS = nullptr;
     QOpenGLVertexArrayObject* vaoSphereL = nullptr;
-    QOpenGLVertexArrayObject* vaoCube    = nullptr;
-    QOpenGLVertexArrayObject* vaoMesh    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube = nullptr;
+    QOpenGLVertexArrayObject* vaoMesh = nullptr;
     QOpenGLBuffer* vboMesh = nullptr;
     QOpenGLBuffer* iboMesh = nullptr;
     unsigned int numFacesSphereS = 0, numFacesSphereL = 0;
     unsigned int numMeshIndices = 0;
     bool showParticles = true;
 
-    // physics
-    IntegratorVerlet integrator; // TODO: pick a better one
+    // Physics
+    IntegratorVerlet integrator;
     ParticleSystem system;
     ForceConstAcceleration* fGravity = nullptr;
     std::vector<ForceSpring*> springsStretch;
     std::vector<ForceSpring*> springsShear;
     std::vector<ForceSpring*> springsBend;
 
-    // cloth properties
+    // Cloth Properties
     std::vector<bool> fixedParticle;
     double clothWidth, clothHeight;
     int numParticles, numParticlesX, numParticlesY;
@@ -76,18 +75,18 @@ protected:
     float restLengthStretch;
     float restLengthShear;
     float restLengthBend;
-    float kS,kD;
+    float kS, kD;
 
-    // collision properties
+    // Collision Properties
     bool checkCollisions = true;
     double colBounce = 0.01;
     double colFriction = 0.05;
-    double particleRadius = 1;
+    double particleRadius = 1.0;
     ColliderParticles colliderParticles;
     ColliderSphere colliderBall;
-    ColliderAABB  colliderCube;
+    ColliderAABB colliderCube;
 
-    // mouse interaction
+    // Mouse Interaction
     int grabX, grabY;
     Vec3 cursorWorldPos;
 };

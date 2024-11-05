@@ -19,6 +19,9 @@ public:
     double getFriction()   const;
     double getElasticity() const;
     double getParticleLife() const;
+    double getBlackHoleMass() const;
+    double getBlackHoleRadius() const;
+    bool   blackHoleEnabled() const;
 
 signals:
     void updatedParameters();

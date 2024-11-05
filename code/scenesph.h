@@ -38,8 +38,15 @@ public:
 public:
     void initializeCube(int numParticles, double x, double y, double z);
     void drawColliderCube(const ColliderAABB& collider, QOpenGLShaderProgram* shader, QOpenGLFunctions* glFuncs);
-    void createColliderContainer(double width, double height, double depth);
+    void createSmallColliderContainer(double width, double height, double depth);
+    void createBigColliderContainer(double width, double height, double depth);
     void initializeGhostParticles(double width, double height, double depth);
+    void removeWall();
+    void setNumInitialParticles();
+    void loadModelAndVaos();
+    void initializeSPHParticles();
+    void drawColliders();
+    void drawParticles(bool paintDensity);
 
 public slots:
     void updateSimParams();
@@ -53,6 +60,10 @@ protected:
     QOpenGLVertexArrayObject* vaoCube1    = nullptr;
     QOpenGLVertexArrayObject* vaoCube2    = nullptr;
     QOpenGLVertexArrayObject* vaoCube3    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube4    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube5    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube6    = nullptr;
+    QOpenGLVertexArrayObject* vaoCube7    = nullptr;
     QOpenGLVertexArrayObject* vaoFloor   = nullptr;
     unsigned int numFacesSphereL = 0, numFacesSphereH = 0;
 
@@ -63,21 +74,34 @@ protected:
     ColliderPlane colliderFloor;
     ColliderSphere colliderSphere;
     ColliderParticles colliderParticles;
-    ColliderAABB colliderBox1,colliderBox2,colliderBox3,colliderBox4;
+    ColliderAABB smallContainerFront,smallContainerLeft,smallContainerRight,smallContainerBack;
+    ColliderAABB bigContainerFront,bigContainerLeft,bigContainerRight,bigContainerBack;
+
+    double cubeWidth, cubeHeight;
+    bool paintMode;
+
+
+    bool leftWallActive, rightWallActive, frontWallActive,backWallActive;
 
     float kBounce = 0.2;
     float kFriction = 0.0;
 
-    int numInitialParticles=4000;
+    int numInitialParticles;
 
-    double cellSize = 2.0f;
-    double smoothingLength = 2.0f;
-    double restDensity = 1000.0f;
-    double viscosity = 0.001f;
+    double cellSize;
+    double smoothingLength;
+    double restDensity;
+    double viscosity;
+    double particleMass;
+    double cs;
+
+    double avgDensity,avgPressure;
+
     SPH sph;
 
 
     int mouseX, mouseY;
+
 };
 
 

@@ -37,5 +37,16 @@ double WidgetFountain::getParticleLife() const
     return ui->particleLife->value();
 }
 
+double WidgetFountain::getBlackHoleRadius() const {
+    return ui->blackHoleRadius->value();
+}
+
+double WidgetFountain::getBlackHoleMass() const {
+    return ui->blackHoleMass->value();
+}
+
+bool WidgetFountain::blackHoleEnabled() const {
+    return ui->blackHoleCheck->isChecked();
+}
 
 

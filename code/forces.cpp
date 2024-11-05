@@ -34,16 +34,66 @@ void ForceSpring::apply() {
 
     float forceDamping = kd * relative_velocity.dot(springDirection);
 
-    // Calculate the stretch or compression
+
     float stretch = distance - L;
 
-    // Calculate the spring force vector
+
     float forceStretch = ks * stretch;
 
-    // Total force (spring + damping)
+
     Vec3 force = (forceStretch + forceDamping) * springDirection;
 
-    // Apply the forces to the particles
-    p1->force += force;    // Apply force to p1
-    p2->force -= force;    // Apply equal and opposite force to p2
+    p1->force += force;
+    p2->force -= force;
+}
+
+
+ForceGravitationalAttractor::ForceGravitationalAttractor()
+    : attractorPosition(Vec3(0, 0, 0)), attractorMass(1.0), gravitationalConstant(1.0) {}
+
+
+ForceGravitationalAttractor::ForceGravitationalAttractor(const Vec3& attractorPos, double attractorMass, double gConstant)
+    : attractorPosition(attractorPos), attractorMass(attractorMass), gravitationalConstant(gConstant) {}
+
+
+ForceGravitationalAttractor::~ForceGravitationalAttractor() {}
+
+
+void ForceGravitationalAttractor::apply() {
+    for (Particle* p : particles) {
+        Vec3 direction = attractorPosition - p->pos;
+        double distanceSquared = direction.squaredNorm();
+
+        if (distanceSquared > 0.0001) {
+            double forceMagnitude = (gravitationalConstant * attractorMass * p->mass) / distanceSquared;
+            Vec3 force = forceMagnitude * direction.normalized();
+
+            p->force += force;
+        }
+    }
+}
+
+
+void ForceGravitationalAttractor::setAttractorPosition(const Vec3& pos) {
+    attractorPosition = pos;
+}
+
+Vec3 ForceGravitationalAttractor::getAttractorPosition() const {
+    return attractorPosition;
+}
+
+void ForceGravitationalAttractor::setAttractorMass(double mass) {
+    attractorMass = mass;
+}
+
+double ForceGravitationalAttractor::getAttractorMass() const {
+    return attractorMass;
+}
+
+void ForceGravitationalAttractor::setGravitationalConstant(double g) {
+    gravitationalConstant = g;
+}
+
+double ForceGravitationalAttractor::getGravitationalConstant() const {
+    return gravitationalConstant;
 }

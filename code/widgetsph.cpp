@@ -10,6 +10,14 @@ WidgetSPH::WidgetSPH(QWidget *parent)
     connect(ui->btnUpdate, &QPushButton::clicked, this, [=] {
         emit updatedParameters();
     });
+
+    connect(ui->paintDensity, &QCheckBox::clicked, this, [this]() {
+        ui->paintPressure->setChecked(false);
+    });
+
+    connect(ui->paintPressure, &QCheckBox::clicked, this, [this]() {
+        ui->paintDensity->setChecked(false);
+    });
 }
 
 WidgetSPH::~WidgetSPH()
@@ -26,14 +34,52 @@ double WidgetSPH::getViscosity() const {
     return ui->viscosity->value();
 }
 
-double WidgetSPH::getSurfaceTension() const {
-    return ui->surfaceTension->value();
-}
-
-double WidgetSPH::getPressureStiffness() const {
-    return ui->pressureStiffness->value();
-}
 
 double WidgetSPH::getParticleMass() const {
     return ui->particleMass->value();
 }
+
+bool WidgetSPH::getLeftWallValue() const {
+    return ui->leftWall->isChecked();
+}
+
+bool WidgetSPH::getRightWallValue() const {
+    return ui->rightWall->isChecked();
+}
+
+bool WidgetSPH::getFrontWallValue() const {
+    return ui->frontWall->isChecked();
+}
+
+bool WidgetSPH::getBackWallValue() const {
+    return ui->backWall->isChecked();
+}
+
+double WidgetSPH::getWidthValue() const {
+    return ui->cubeWidth->value();
+}
+
+double WidgetSPH::getHeightValue() const {
+    return ui->cubeHeight->value();
+}
+
+int WidgetSPH::getNumInitialParticles() const {
+    return ui->numInitialParticles->value();
+}
+
+bool WidgetSPH::getPaintMode() {
+    if(ui->paintDensity->isChecked())
+    {
+        return true;
+    }
+    else
+        {
+            return false;
+        }
+}
+
+double WidgetSPH::getCs() const
+{
+    return ui->cs->value();
+}
+

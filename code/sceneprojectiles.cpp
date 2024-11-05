@@ -118,12 +118,12 @@ void SceneProjectiles::initialize() {
 
 Integrator* createIntegrator(int type) {
     switch(type) {
-        case 0: return new IntegratorEuler();
-        case 1: return new IntegratorSymplecticEuler();
-        case 2: return new IntegratorMidpoint();
-        case 3: return new IntegratorRK2();
-        case 4: return new IntegratorVerlet();
-        default: return nullptr;
+    case 0: return new IntegratorEuler();
+    case 1: return new IntegratorSymplecticEuler();
+    case 2: return new IntegratorMidpoint();
+    case 3: return new IntegratorRK2();
+    case 4: return new IntegratorVerlet();
+    default: return nullptr;
     }
 }
 
@@ -197,7 +197,7 @@ void SceneProjectiles::update(double dt) {
         p->pos[0] = t * shotSpeed * std::cos(shotAngle);
         p->pos[1] = shotHeight + t*vy0 - 0.5*gravityAccel*t*t;
         p->vel    = Vec3(shotSpeed*std::cos(shotAngle),
-                         shotSpeed*std::sin(shotAngle) - gravityAccel*t, 0);
+                      shotSpeed*std::sin(shotAngle) - gravityAccel*t, 0);
 
         trajectoryAnalytic.push_back(p->pos);
         if (trajectoryAnalytic.size() > MAX_TRAJ_POINTS) trajectoryAnalytic.pop_front();
@@ -240,7 +240,7 @@ void SceneProjectiles::update(double dt) {
         Collision col;
         if (floor.testCollision(p,col))
         {
-           floor.resolveCollision(p,col,elasticity,frictionCoefficient);
+            floor.resolveCollision(p,col,elasticity,frictionCoefficient);
         }
 
 
@@ -309,8 +309,8 @@ void SceneProjectiles::paint(const Camera& camera) {
     // draw the different spheres
     vaoSphere->bind();
     const Particle* particles[3] = { systemAnalytic.getParticle(0),
-                                     systemNumerical1.getParticle(0),
-                                     systemNumerical2.getParticle(0) };
+                                    systemNumerical1.getParticle(0),
+                                    systemNumerical2.getParticle(0) };
     for (const Particle* particle : particles) {
         Vec3   p = particle->pos;
         Vec3   c = particle->color;

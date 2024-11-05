@@ -19,9 +19,16 @@ public:
     // Getter methods for the SPH parameters
     double getDensity() const;
     double getViscosity() const;
-    double getSurfaceTension() const;
-    double getPressureStiffness() const;
     double getParticleMass() const;
+    double getCs()const;
+    bool getLeftWallValue() const;
+    bool getRightWallValue() const;
+    bool getFrontWallValue() const;
+    bool getBackWallValue() const;
+    double getWidthValue() const;
+    double getHeightValue() const;
+    int getNumInitialParticles() const;
+    bool getPaintMode();
 
 signals:
     void updatedParameters();

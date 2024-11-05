@@ -104,6 +104,29 @@ protected:
     double kd = 0;  // damping coeff
 };
 
+class ForceGravitationalAttractor : public Force
+{
+public:
+    ForceGravitationalAttractor();
+    ForceGravitationalAttractor(const Vec3& attractorPos, double attractorMass, double gConstant);
 
+    virtual ~ForceGravitationalAttractor();
+
+    virtual void apply() override;
+
+    void setAttractorPosition(const Vec3& pos);
+    Vec3 getAttractorPosition() const;
+
+    void setAttractorMass(double mass);
+    double getAttractorMass() const;
+
+    void setGravitationalConstant(double g);
+    double getGravitationalConstant() const;
+
+protected:
+    Vec3 attractorPosition;
+    double attractorMass;
+    double gravitationalConstant;
+};
 
 #endif // FORCES_H

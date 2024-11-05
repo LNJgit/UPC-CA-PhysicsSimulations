@@ -4,12 +4,10 @@
 #include <QOpenGLFunctions_3_3_Core>
 #include <iostream>
 
-
 SceneFountain::SceneFountain() {
     widget = new WidgetFountain();
     connect(widget, SIGNAL(updatedParameters()), this, SLOT(updateSimParams()));
 }
-
 
 SceneFountain::~SceneFountain() {
     if (widget)     delete widget;
@@ -19,120 +17,143 @@ SceneFountain::~SceneFountain() {
     if (vaoSphereL) delete vaoSphereL;
     if (vaoCube)    delete vaoCube;
     if (fGravity)   delete fGravity;
+    if (fAttractor) delete fAttractor;
 }
 
+void SceneFountain::createBlackHole(const Vec3& position, double radius, double mass) {
+    double gravitationalConstant = 1.0;
+    fAttractor = new ForceGravitationalAttractor(position, mass, gravitationalConstant);
+    system.addForce(fAttractor);
 
-void SceneFountain::initialize() {
-    // load shader
+    blackHole.setCenter(position);
+    blackHole.setRadius(radius);
+
+    Model sphere = Model::createIcosphere(3);
+    vaoBlackHole = glutils::createVAO(shader, &sphere, buffers);
+    numFacesSphereH = sphere.numFaces();
+    glutils::checkGLError();
+}
+
+void SceneFountain::initializeShaderAndVAOS() {
     shader = glutils::loadShaderProgram(":/shaders/phong.vert", ":/shaders/phong.frag");
 
-    // create floor VAO
     Model quad = Model::createQuad();
     vaoFloor = glutils::createVAO(shader, &quad, buffers);
     glutils::checkGLError();
 
-    // create particle VAOs
     Model sphereLowres = Model::createIcosphere(1);
     vaoSphereL = glutils::createVAO(shader, &sphereLowres, buffers);
     numFacesSphereL = sphereLowres.numFaces();
     glutils::checkGLError();
 
-    // create sphere VAO
     Model sphere = Model::createIcosphere(3);
     vaoSphereH = glutils::createVAO(shader, &sphere, buffers);
     numFacesSphereH = sphere.numFaces();
     glutils::checkGLError();
 
-    // create box VAO
+    Model sphere2 = Model::createIcosphere(3);
+    vaoBlackHole = glutils::createVAO(shader, &sphere2, buffers);
+    numFacesSphereH = sphere2.numFaces();
+    glutils::checkGLError();
+
     Model cube = Model::createCube();
     vaoCube = glutils::createVAO(shader, &cube, buffers);
     glutils::checkGLError();
+}
 
-
-    // create forces
-    fGravity = new ForceConstAcceleration();
-    system.addForce(fGravity);
-
-
-    // scene description
-    fountainPos = Vec3(0, 80, 0);    
-    colliderFloor.setPlane(Vec3(0, 1, 0), 0);    
-    colliderSphere.setCenter(Vec3(0,0,0));
+void SceneFountain::setCollidersAndFountain() {
+    fountainPos = Vec3(0, 80, 0);
+    colliderFloor.setPlane(Vec3(0, 1, 0), 0);
+    colliderSphere.setCenter(Vec3(0, 0, 0));
     colliderSphere.setRadius(10);
-    colliderBox.setFromBounds(Vec3(30,0,20), Vec3(50,10,60));
+    colliderBox.setFromBounds(Vec3(30, 0, 20), Vec3(50, 10, 60));
 
-    ColliderAABB colliderBox1,colliderBox2,colliderBox3,colliderBox4;
-    colliderBox1.setFromBounds(Vec3(-10, -5, 10), Vec3(10, 5, 11)); // Front face at z = 10
-
-    // Back Wall (aligned along x-axis, positioned along z-axis)
-    colliderBox2.setFromBounds(Vec3(-10, -5, -11), Vec3(10, 5, -10)); // Back face at z = -10
-
-    // Left Wall (aligned along z-axis, positioned along x-axis)
-    colliderBox3.setFromBounds(Vec3(-11, -5, -10), Vec3(-10, 5, 10)); // Left face at x = -10
-
-    // Right Wall (aligned along z-axis, positioned along x-axis)
-    colliderBox4.setFromBounds(Vec3(10, -5, -10), Vec3(11, 5, 10)); // Right face at x = 10
+    ColliderAABB colliderBox1, colliderBox2, colliderBox3, colliderBox4;
+    colliderBox1.setFromBounds(Vec3(-10, -5, 10), Vec3(10, 5, 11));
+    colliderBox2.setFromBounds(Vec3(-10, -5, -11), Vec3(10, 5, -10));
+    colliderBox3.setFromBounds(Vec3(-11, -5, -10), Vec3(-10, 5, 10));
+    colliderBox4.setFromBounds(Vec3(10, -5, -10), Vec3(11, 5, 10));
     colliderParticles.setCellSize(1);
 }
 
-
-void SceneFountain::reset()
-{
-    // update values from UI
+void SceneFountain::initialize() {
     updateSimParams();
+    initializeShaderAndVAOS();
 
-    // reset random seed
-    Random::seed(1337);
+    fGravity = new ForceConstAcceleration();
+    system.addForce(fGravity);
 
-    // erase all particles
-    fGravity->clearInfluencedParticles();
-    system.deleteParticles();
-    deadParticles.clear();
+    setCollidersAndFountain();
 }
 
+void SceneFountain::reset() {
+    updateSimParams();
+    Random::seed(1337);
 
-void SceneFountain::updateSimParams()
-{
-    // get gravity from UI and update force
+    fGravity->clearInfluencedParticles();
+    fAttractor->clearInfluencedParticles();
+    system.deleteParticles();
+    deadParticles.clear();
+    if (blackHoleEnabled) {
+        createBlackHole(Vec3(0, 100, 0), blackHoleRadius, blackHoleMass);
+    }
+}
+
+void SceneFountain::updateSimParams() {
     double g = widget->getGravity();
     fGravity->setAcceleration(Vec3(0, -g, 0));
     emitRate = widget->getEmitRate();
-    kFriction= widget->getFriction();
-    kBounce  = widget->getElasticity();
+    kFriction = widget->getFriction();
+    kBounce = widget->getElasticity();
     maxParticleLife = widget->getParticleLife();
 
+    double newBlackHoleRadius = widget->getBlackHoleRadius();
+    double newBlackHoleMass = widget->getBlackHoleMass();
+    bool newBlackHoleEnabled = widget->blackHoleEnabled();
 
+    if (newBlackHoleEnabled != blackHoleEnabled ||
+        (newBlackHoleEnabled && (newBlackHoleRadius != blackHoleRadius || newBlackHoleMass != blackHoleMass))) {
 
+        blackHoleRadius = newBlackHoleRadius;
+        blackHoleMass = newBlackHoleMass;
+        blackHoleEnabled = newBlackHoleEnabled;
 
+        if (blackHoleEnabled) {
+            fAttractor->setAttractorMass(blackHoleMass);
+            fAttractor->clearInfluencedParticles();
+            blackHole.setRadius(blackHoleRadius);
+
+            for (Particle* p : system.getParticles()) {
+                fAttractor->addInfluencedParticle(p);
+            }
+        } else if (fAttractor) {
+            fAttractor->clearInfluencedParticles();
+        }
+    }
 }
 
-
 void SceneFountain::paint(const Camera& camera) {
-
     QOpenGLFunctions* glFuncs = nullptr;
     glFuncs = QOpenGLContext::currentContext()->functions();
 
     shader->bind();
 
-    // camera matrices
     QMatrix4x4 camProj = camera.getPerspectiveMatrix();
     QMatrix4x4 camView = camera.getViewMatrix();
     shader->setUniformValue("ProjMatrix", camProj);
     shader->setUniformValue("ViewMatrix", camView);
 
-    // lighting
     const int numLights = 1;
-    const QVector3D lightPosWorld[numLights] = {QVector3D(100,500,100)};
-    const QVector3D lightColor[numLights] = {QVector3D(1,1,1)};
+    const QVector3D lightPosWorld[numLights] = {QVector3D(100, 500, 100)};
+    const QVector3D lightColor[numLights] = {QVector3D(1, 1, 1)};
     QVector3D lightPosCam[numLights];
     for (int i = 0; i < numLights; i++) {
-        lightPosCam[i] = camView.map(lightPosWorld[i]);  // map = matrix * vector
+        lightPosCam[i] = camView.map(lightPosWorld[i]);
     }
     shader->setUniformValue("numLights", numLights);
     shader->setUniformValueArray("lightPos", lightPosCam, numLights);
     shader->setUniformValueArray("lightColor", lightColor, numLights);
 
-    // draw floor
     vaoFloor->bind();
     QMatrix4x4 modelMat;
     modelMat.scale(100, 1, 100);
@@ -142,11 +163,10 @@ void SceneFountain::paint(const Camera& camera) {
     shader->setUniformValue("matshin", 0.0f);
     glFuncs->glDrawElements(GL_TRIANGLES, 6, GL_UNSIGNED_INT, 0);
 
-    // draw the particles
     vaoSphereL->bind();
     for (const Particle* particle : system.getParticles()) {
-        Vec3   p = particle->pos;
-        Vec3   c = particle->color;
+        Vec3 p = particle->pos;
+        Vec3 c = particle->color;
         double r = particle->radius;
 
         modelMat = QMatrix4x4();
@@ -158,10 +178,9 @@ void SceneFountain::paint(const Camera& camera) {
         shader->setUniformValue("matspec", 1.0f, 1.0f, 1.0f);
         shader->setUniformValue("matshin", 100.f);
 
-        glFuncs->glDrawElements(GL_TRIANGLES, 3*numFacesSphereL, GL_UNSIGNED_INT, 0);
+        glFuncs->glDrawElements(GL_TRIANGLES, 3 * numFacesSphereL, GL_UNSIGNED_INT, 0);
     }
 
-    // draw sphere
     vaoSphereH->bind();
     Vec3 cc = colliderSphere.getCenter();
     modelMat = QMatrix4x4();
@@ -171,12 +190,24 @@ void SceneFountain::paint(const Camera& camera) {
     shader->setUniformValue("matdiff", 0.8f, 0.4f, 0.4f);
     shader->setUniformValue("matspec", 0.0f, 0.0f, 0.0f);
     shader->setUniformValue("matshin", 0.0f);
-    glFuncs->glDrawElements(GL_TRIANGLES, 3*numFacesSphereH, GL_UNSIGNED_INT, 0);
+    glFuncs->glDrawElements(GL_TRIANGLES, 3 * numFacesSphereH, GL_UNSIGNED_INT, 0);
 
-    // draw box
+    if (blackHoleEnabled) {
+        vaoBlackHole->bind();
+        cc = blackHole.getCenter();
+        modelMat = QMatrix4x4();
+        modelMat.translate(cc[0], cc[1], cc[2]);
+        modelMat.scale(blackHole.getRadius());
+        shader->setUniformValue("ModelMatrix", modelMat);
+        shader->setUniformValue("matdiff", 0.05f, 0.05f, 0.05f);
+        shader->setUniformValue("matspec", 0.1f, 0.1f, 0.1f);
+        shader->setUniformValue("matshin", 0.0f);
+        glFuncs->glDrawElements(GL_TRIANGLES, 3 * numFacesSphereH, GL_UNSIGNED_INT, 0);
+    }
+
     vaoCube->bind();
     cc = colliderBox.getCenter();
-    Vec3 hs = 0.5*colliderBox.getSize();
+    Vec3 hs = 0.5 * colliderBox.getSize();
     modelMat = QMatrix4x4();
     modelMat.translate(cc[0], cc[1], cc[2]);
     modelMat.scale(hs[0], hs[1], hs[2]);
@@ -184,33 +215,28 @@ void SceneFountain::paint(const Camera& camera) {
     shader->setUniformValue("matdiff", 0.4f, 0.8f, 0.4f);
     shader->setUniformValue("matspec", 0.0f, 0.0f, 0.0f);
     shader->setUniformValue("matshin", 0.0f);
-    glFuncs->glDrawElements(GL_TRIANGLES, 3*2*6, GL_UNSIGNED_INT, 0);
+    glFuncs->glDrawElements(GL_TRIANGLES, 3 * 2 * 6, GL_UNSIGNED_INT, 0);
     vaoCube->release();
     shader->release();
 }
 
-
 void SceneFountain::update(double dt) {
-
-    // emit new particles, reuse dead ones if possible
     int emitParticles = std::max(1, int(std::round(emitRate * dt)));
     for (int i = 0; i < emitParticles; i++) {
         Particle* p;
         if (!deadParticles.empty()) {
-            // reuse one dead particle
             p = deadParticles.front();
             deadParticles.pop_front();
-        }
-        else {
-            // create new particle
+        } else {
             p = new Particle();
             system.addParticle(p);
-
-            // don't forget to add particle to forces that affect it
             fGravity->addInfluencedParticle(p);
+            if (blackHoleEnabled) {
+                fAttractor->addInfluencedParticle(p);
+            }
         }
 
-        p->color = Vec3(153/255.0, 217/255.0, 234/255.0);
+        p->color = Vec3(153 / 255.0, 217 / 255.0, 234 / 255.0);
         p->radius = 1.0;
         p->life = maxParticleLife;
 
@@ -218,42 +244,37 @@ void SceneFountain::update(double dt) {
         double y = 0;
         double z = Random::get(-10.0, 10.0);
         p->pos = Vec3(x, y, z) + fountainPos;
-        p->vel = Vec3(0,0,0);
+        p->vel = Vec3(0, 0, 0);
     }
 
-    // integration step
     Vecd ppos = system.getPositions();
     integrator.step(system, dt);
     system.setPreviousPositions(ppos);
 
     colliderParticles.particleMap.clear();
-    for (Particle *p : system.getParticles())
-    {
+    for (Particle* p : system.getParticles()) {
         colliderParticles.addParticle(p);
     }
 
-
-    // collisions
     Collision colInfo;
     for (Particle* p : system.getParticles()) {
         if (colliderFloor.testCollision(p, colInfo)) {
             colliderFloor.resolveCollision(p, colInfo, kBounce, kFriction);
         }
-        if (colliderSphere.testCollision(p,colInfo))
-        {
-            colliderSphere.resolveCollision(p,colInfo,kBounce,kFriction);
+        if (colliderSphere.testCollision(p, colInfo)) {
+            colliderSphere.resolveCollision(p, colInfo, kBounce, kFriction);
         }
-        if (colliderBox.testCollision(p,colInfo))
-        {
-            colliderBox.resolveCollision(p,colInfo,kBounce,kFriction);
+        if (blackHoleEnabled && blackHole.testCollision(p, colInfo)) {
+            blackHole.resolveCollision(p, colInfo, kBounce, kFriction);
         }
-        if(colliderParticles.testCollision(p,colInfo))
-        {
-            colliderParticles.resolveCollisionParticles(colInfo,kBounce,kFriction);
+        if (colliderBox.testCollision(p, colInfo)) {
+            colliderBox.resolveCollision(p, colInfo, kBounce, kFriction);
+        }
+        if (colliderParticles.testCollision(p, colInfo)) {
+            colliderParticles.resolveCollisionParticles(colInfo, kBounce, kFriction);
         }
     }
 
-    // check dead particles
     for (Particle* p : system.getParticles()) {
         if (p->life > 0) {
             p->life -= dt;
@@ -264,14 +285,12 @@ void SceneFountain::update(double dt) {
     }
 }
 
-void SceneFountain::mousePressed(const QMouseEvent* e, const Camera&)
-{
+void SceneFountain::mousePressed(const QMouseEvent* e, const Camera&) {
     mouseX = e->pos().x();
     mouseY = e->pos().y();
 }
 
-void SceneFountain::mouseMoved(const QMouseEvent* e, const Camera& cam)
-{
+void SceneFountain::mouseMoved(const QMouseEvent* e, const Camera& cam) {
     int dx = e->pos().x() - mouseX;
     int dy = e->pos().y() - mouseY;
     mouseX = e->pos().x();
@@ -279,17 +298,13 @@ void SceneFountain::mouseMoved(const QMouseEvent* e, const Camera& cam)
 
     Vec3 disp = cam.worldSpaceDisplacement(dx, -dy, cam.getEyeDistance());
 
-    // example
     if (e->buttons() & Qt::RightButton) {
         if (!e->modifiers()) {
-            // move fountain
             fountainPos += disp;
-        }
-        else if (e->modifiers() & Qt::ShiftModifier){
-            // move box
+        } else if (e->modifiers() & Qt::ShiftModifier) {
             colliderBox.setFromCenterSize(
-                        colliderBox.getCenter() + disp,
-                        colliderBox.getSize());
+                colliderBox.getCenter() + disp,
+                colliderBox.getSize());
         }
     }
 }

@@ -2,8 +2,8 @@
 #include <cmath>
 #include <iostream>
 
-SPH::SPH(double cellSize, double smoothingLength, double restDensity, double viscosity)
-    : cellSize(cellSize), smoothingLength(smoothingLength), restDensity(restDensity), viscosity(viscosity) {}
+SPH::SPH(double cellSize, double smoothingLength)
+    : cellSize(cellSize), smoothingLength(smoothingLength) {}
 
 int SPH::getHashValue(Particle* p) const
 {
@@ -18,15 +18,15 @@ int SPH::getHashValue(Particle* p) const
     return hashKey;
 }
 
-void SPH::addParticle(Particle *p)
+void SPH::addParticle(Particle* p)
 {
-    ParticleSPH particleSPH = {p, 0.0, 0.0, Vec3(0.0, 0.0, 0.0)};
+    ParticleSPH particleSPH = { p, 0.0, 0.0, Vec3(0.0, 0.0, 0.0) };
     int hashKey = getHashValue(p);
     particleMap[hashKey].push_back(particleSPH);
     Particles.push_back(particleSPH);
 }
 
-void SPH::initializeReferenceDensity() {
+double SPH::initializeReferenceDensity() {
     double totalDensity = 0.0;
 
     for (auto& particle : Particles) {
@@ -36,7 +36,8 @@ void SPH::initializeReferenceDensity() {
     }
 
     // Calculate the average density and set it as the reference density
-    restDensity = totalDensity / Particles.size();
+    double restDensity = totalDensity / Particles.size();
+    return restDensity;
 }
 
 int SPH::getHashValueForOffset(const Particle* p, int dx, int dy, int dz) const
@@ -95,7 +96,7 @@ void SPH::computeDensity(ParticleSPH& particle) {
     for (ParticleSPH* neighbor : particle.neighbors) {
         double distance = (particle.p->pos - neighbor->p->pos).norm();
         particle.density += neighbor->p->mass * smoothingKernel(smoothingLength, distance) * 1000000;
-        particle.p->density=particle.density;
+        particle.p->density = particle.density;
     }
 }
 
@@ -131,13 +132,27 @@ Vec3 SPH::smoothingKernelGradient(const ParticleSPH& p1, const ParticleSPH& p2) 
     return gradient;
 }
 
-void SPH::computePressure(ParticleSPH& particle) {
-    double c_s = 1.0;
+void SPH::computePressure(ParticleSPH& particle, double restDensity, double c_s) {
     particle.pressure = std::abs(c_s * c_s * (particle.density - restDensity));
     particle.p->pressure = particle.pressure;
 }
 
-void SPH::computePressureForces(ParticleSPH& particle) {
+double SPH::viscosityKernel(double r, double h) {
+    if (r < 0 || r > h) {
+        return 0.0;
+    }
+    double factor = 15.0 / (2.0 * M_PI * pow(h, 3));
+    return factor * (-pow(r, 3) / (2 * pow(h, 3)) + pow(r, 2) / pow(h, 2) + h / (2 * r) - 1);
+}
+
+double SPH::viscosityKernelLaplacian(double r, double h) {
+    if (r < 0 || r > h) {
+        return 0.0;
+    }
+    return (45.0 / (M_PI * pow(h, 5))) * (1.0 - r / h);
+}
+
+void SPH::computePressureForces(ParticleSPH& particle, double viscosity) {
     for (ParticleSPH* neighborPtr : particle.neighbors) {
         ParticleSPH& neighbor = *neighborPtr;
         Vec3 distanceVector = particle.p->pos - neighbor.p->pos;
@@ -150,13 +165,12 @@ void SPH::computePressureForces(ParticleSPH& particle) {
 
         // Pressure force gradient
         Vec3 gradient = smoothingKernelGradient(particle, neighbor);
-        Vec3 pressureForce = pressureTerm * gradient ; // Reduced coefficient
+        Vec3 pressureForce = pressureTerm * gradient; // Reduced coefficient
 
         // Viscosity term
         Vec3 relativeVelocity = neighbor.p->vel - particle.p->vel;
-        double viscosityCoefficient = 0.01; // Increase this if damping is insufficient
-        double viscosityFactor = (smoothingKernelDerivative(distance, smoothingLength) / distance);
-        Vec3 viscosityForce = viscosityCoefficient * relativeVelocity;
+        double laplacian = viscosityKernelLaplacian(distance, smoothingLength);
+        Vec3 viscosityForce = viscosity * laplacian * relativeVelocity;
 
         // Total force contribution
         particle.p->force += -pressureForce + viscosityForce;
@@ -177,11 +191,12 @@ void SPH::clearParticles()
 
 void SPH::setCellSize(int size)
 {
-    this->cellSize=size;
+    this->cellSize = size;
 }
+
 void SPH::setSmoothingLength(float radius)
 {
-    this->smoothingLength=radius;
+    this->smoothingLength = radius;
 }
 
 double SPH::getSmoothingLength()
@@ -189,7 +204,5 @@ double SPH::getSmoothingLength()
     return smoothingLength;
 }
 
-double SPH::getRestingDensity()
-{
-    return restDensity;
-}
+
+

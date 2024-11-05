@@ -40,14 +40,24 @@ void IntegratorMidpoint::step(ParticleSystem &system, double dt) {
 
 
 }
-
 void IntegratorVerlet::step(ParticleSystem &system, double dt) {
+    // Get current and previous positions, and current accelerations
     Vecd current_position = system.getPositions();
-    Vecd current_velocity = system.getVelocities();
+    Vecd previous_position = system.getPreviousPositions();
+    Vecd accelerations = system.getAccelerations();
 
-    Vecd next_position = current_position + (dt*current_velocity) + pow(dt,2.0)*system.getAccelerations();
-    system.updateForces();
+    // Verlet position update
+    Vecd next_position = 2 * current_position - previous_position + dt * dt * accelerations;
+
+    // Update previous position for the next iteration
+    system.setPreviousPositions(current_position);
     system.setPositions(next_position);
-    system.setVelocities((next_position-current_position)/dt);
 
+    // Estimate velocity for external collision handling
+    Vecd estimated_velocity = (next_position - previous_position) / (2 * dt);
+    system.setVelocities(estimated_velocity);
+
+    // Recalculate forces for the next step
+    system.updateForces();
 }
+

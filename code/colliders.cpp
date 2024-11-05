@@ -49,18 +49,15 @@ void Collider::resolveCollision(Particle* p, const Collision& col, double kElast
     // Update the particle's velocity
     p->vel = new_normal_velocity + new_tangent_velocity;
 
-    // Position correction to prevent clipping or excessive bounces
-    double penetration_depth = -(col.normal.dot(p->pos - col.position)) + p->radius;
+    // // Position correction to prevent clipping or excessive bounces
+    // double penetration_depth = -(col.normal.dot(p->pos - col.position)) + p->radius;
 
-    // Soft position correction to avoid high speeds
-    double correction_factor = 0.5; // Adjust this for smoother responses, if needed
-    if (penetration_depth > 0) {
-        p->pos += col.normal * (penetration_depth * correction_factor);
-    }
+    // // Soft position correction to avoid high speeds
+    // double correction_factor = 0.5; // Adjust this for smoother responses, if needed
+    // if (penetration_depth > 0) {
+    //     p->pos += col.normal * (penetration_depth * correction_factor);
+    // }
 }
-
-
-
 
 /*
  * Plane

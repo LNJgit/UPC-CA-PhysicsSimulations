@@ -42,6 +42,7 @@ public:
     std::vector<Particle*>& getParticles();
     void clearParticles();  // clears vector but does not delete items
     void deleteParticles(); // deletes items and clears vector
+    void removeForce(Force* force);
 
     // forces
     void addForce(Force* f);

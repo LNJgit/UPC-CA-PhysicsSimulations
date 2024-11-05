@@ -127,3 +127,11 @@ void ParticleSystem::setPreviousPositions(const Vecd& ppos) {
         particles[i]->prevPos[2] = ppos[3*i + 2];
     }
 }
+
+
+void ParticleSystem::removeForce(Force* force) {
+    auto it = std::find(forces.begin(), forces.end(), force);
+    if (it != forces.end()) {
+        forces.erase(it);
+    }
+}

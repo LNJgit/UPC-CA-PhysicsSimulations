@@ -36,6 +36,9 @@ public:
 
 public slots:
     void updateSimParams();
+    void createBlackHole(const Vec3& position, double radius, double mass);
+    void initializeShaderAndVAOS();
+    void setCollidersAndFountain();
 
 protected:
     WidgetFountain* widget = nullptr;
@@ -43,26 +46,31 @@ protected:
     QOpenGLShaderProgram* shader = nullptr;
     QOpenGLVertexArrayObject* vaoSphereL = nullptr;
     QOpenGLVertexArrayObject* vaoSphereH = nullptr;
+    QOpenGLVertexArrayObject* vaoBlackHole = nullptr;
     QOpenGLVertexArrayObject* vaoCube    = nullptr;
     QOpenGLVertexArrayObject* vaoFloor   = nullptr;
     unsigned int numFacesSphereL = 0, numFacesSphereH = 0;
 
-    IntegratorEuler integrator;
+    IntegratorRK2 integrator;
     ParticleSystem system;
     std::list<Particle*> deadParticles;
     ForceConstAcceleration* fGravity;
+    ForceGravitationalAttractor* fAttractor;
 
     ColliderPlane colliderFloor;
     ColliderSphere colliderSphere;
     ColliderAABB   colliderBox;
+    ColliderSphere blackHole;
     ColliderParticles colliderParticles;
 
     double kBounce, kFriction;
     double emitRate;
     double maxParticleLife;
 
+    double blackHoleMass, blackHoleRadius;
+    bool blackHoleEnabled;
+
     Vec3 fountainPos;
     int mouseX, mouseY;
 };
-
 #endif // SCENEFOUNTAIN_H

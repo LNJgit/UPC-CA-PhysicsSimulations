@@ -16,6 +16,7 @@ public:
     virtual void initialize() = 0;
     virtual void reset() = 0;
     virtual void update(double dt) = 0;
+    virtual void setTimeStep(double dt) {}
     virtual void paint(const Camera& cam) = 0;
 
     virtual void mousePressed (const QMouseEvent*, const Camera&) {};
